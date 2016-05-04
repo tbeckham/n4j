@@ -156,7 +156,7 @@ public class TestCannedRoles {
                     print("Resetting assume role policy for account administrator");
                     youAre.updateAssumeRolePolicy(new UpdateAssumeRolePolicyRequest()
                             .withRoleName("AccountAdministrator")
-                            .withPolicyDocument(aaAssumeRolePolicy));
+                            .withPolicyDocument("{"+aaAssumeRolePolicy+"}"));
                 }
             });
 
@@ -168,7 +168,7 @@ public class TestCannedRoles {
                     print("Resetting assume role policy for infrastructure administrator");
                     youAre.updateAssumeRolePolicy(new UpdateAssumeRolePolicyRequest()
                             .withRoleName("InfrastructureAdministrator")
-                            .withPolicyDocument(iaAssumeRolePolicy));
+                            .withPolicyDocument("{"+iaAssumeRolePolicy+"}"));
                 }
             });
 
@@ -179,7 +179,7 @@ public class TestCannedRoles {
                     print("Resetting assume role policy for resource administrator");
                     youAre.updateAssumeRolePolicy(new UpdateAssumeRolePolicyRequest()
                             .withRoleName("ResourceAdministrator")
-                            .withPolicyDocument(raAssumeRolePolicy));
+                            .withPolicyDocument("{"+raAssumeRolePolicy+"}"));
                 }
             });
 

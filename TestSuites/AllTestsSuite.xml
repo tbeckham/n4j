@@ -11,7 +11,7 @@
         <suite-file path="JCloudsSuite.xml" />
     </suite-files>
 
-    <test name="Eutester4j_Sanity_Test">
+    <test name="N4j_Sanity_Test">
         <classes>
             <class name="com.eucalyptus.tests.awssdk.N4jTest"/>
         </classes>
