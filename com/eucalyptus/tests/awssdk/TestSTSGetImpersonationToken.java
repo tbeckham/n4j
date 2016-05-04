@@ -48,10 +48,10 @@ import com.github.sjones4.youcan.youtoken.model.GetImpersonationTokenRequest;
 import com.github.sjones4.youcan.youtoken.model.GetImpersonationTokenResult;
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit;
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP;
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY;
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY;
+import static com.eucalyptus.tests.awssdk.N4j.minimalInit;
+import static com.eucalyptus.tests.awssdk.N4j.CLC_IP;
+import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY;
+import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY;
 /**
  * This application tests getting an impersonation token using STS and consuming EC2 with the creds.
  *
@@ -70,7 +70,7 @@ public class TestSTSGetImpersonationToken {
 
   public TestSTSGetImpersonationToken() throws Exception{
     minimalInit();
-    this.host = HOST_IP;
+    this.host = CLC_IP;
     this.accessKey = ACCESS_KEY;
     this.secretKey = SECRET_KEY;
   }

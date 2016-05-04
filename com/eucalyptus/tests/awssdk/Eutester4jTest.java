@@ -1,7 +1,7 @@
 /**
  * Software License Agreement (BSD License)
  *
- * Copyright (c) 2009-2013, Eucalyptus Systems, Inc.
+ * Copyright (c) 2009-2016, Eucalyptus Systems, Inc.
  * All rights reserved.
  *
  * Redistribution and use of this software in source and binary forms, with or
@@ -48,7 +48,7 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * At this time eucarc path needs to be hard coded. 

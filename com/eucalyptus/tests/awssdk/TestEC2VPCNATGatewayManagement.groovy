@@ -10,7 +10,7 @@ import com.amazonaws.services.ec2.model.*
 import org.testng.Assert
 import org.testng.annotations.Test
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*
+import static N4j.*
 
 /**
  * This application tests EC2 VPC NAT gateway management

@@ -1,10 +1,10 @@
 package com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.assertThat;
-import static com.eucalyptus.tests.awssdk.Eutester4j.eucaUUID;
-import static com.eucalyptus.tests.awssdk.Eutester4j.initS3ClientWithNewAccount;
-import static com.eucalyptus.tests.awssdk.Eutester4j.print;
-import static com.eucalyptus.tests.awssdk.Eutester4j.testInfo;
+import static com.eucalyptus.tests.awssdk.N4j.assertThat;
+import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
+import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
+import static com.eucalyptus.tests.awssdk.N4j.print;
+import static com.eucalyptus.tests.awssdk.N4j.testInfo;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.File;
@@ -93,7 +93,7 @@ public class S3ListVersionsTests {
   @AfterClass
   public void teardown() throws Exception {
     print("### POST SUITE CLEANUP - " + this.getClass().getSimpleName());
-    Eutester4j.deleteAccount(account);
+    N4j.deleteAccount(account);
     s3 = null;
   }
 
@@ -1413,7 +1413,7 @@ public class S3ListVersionsTests {
       printException(ase);
       assertThat(false, "Failed to run listVersionsDifferentAccount");
     } finally {
-      Eutester4j.deleteAccount(accountB);
+      N4j.deleteAccount(accountB);
       s3ClientB = null;
     }
   }
@@ -1465,7 +1465,7 @@ public class S3ListVersionsTests {
       printException(ase);
       assertThat(false, "Failed to run deleteVersionNonBucketOwnerAccount");
     } finally {
-      Eutester4j.deleteAccount(accountC);
+      N4j.deleteAccount(accountC);
       s3ClientC = null;
     }
   }
@@ -1473,13 +1473,13 @@ public class S3ListVersionsTests {
   private AmazonS3 getS3Client(String credPath) throws Exception {
     print("Getting cloud information from " + credPath);
 
-    String s3Endpoint = Eutester4j.parseEucarc(credPath, "S3_URL") + "/";
+    String s3Endpoint = N4j.getAttribute(credPath, "S3_URL") + "/";
 
-    String secretKey = Eutester4j.parseEucarc(credPath, "EC2_SECRET_KEY").replace("'", "");
-    String accessKey = Eutester4j.parseEucarc(credPath, "EC2_ACCESS_KEY").replace("'", "");
+    String secretKey = N4j.getAttribute(credPath, "EC2_SECRET_KEY").replace("'", "");
+    String accessKey = N4j.getAttribute(credPath, "EC2_ACCESS_KEY").replace("'", "");
 
     print("Initializing S3 connections");
-    return Eutester4j.getS3Client(accessKey, secretKey, s3Endpoint);
+    return N4j.getS3Client(accessKey, secretKey, s3Endpoint);
   }
 
   // @Test

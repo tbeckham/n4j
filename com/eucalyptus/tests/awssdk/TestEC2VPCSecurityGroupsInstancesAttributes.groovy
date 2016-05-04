@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright 2009-2013 Eucalyptus Systems, Inc.
+ * Copyright 2009-2016 Eucalyptus Systems, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,10 +30,10 @@ import com.amazonaws.services.ec2.model.*
 
 import org.testng.annotations.Test
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  * This application tests EC2 VPC security group functionality.
@@ -57,7 +57,7 @@ class TestEC2VPCSecurityGroupsInstancesAttributes {
 
   public TestEC2VPCSecurityGroupsInstancesAttributes() {
       minimalInit()
-      this.host=HOST_IP
+      this.host=CLC_IP
       this.credentials = new StaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY))
       this.imageOwners = imageOwners
   }

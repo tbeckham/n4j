@@ -8,7 +8,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.*
 import org.testng.annotations.Test
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*
+import static N4j.*
 
 /**
  * This application tests tagging and filtering for EC2 VPC resources.

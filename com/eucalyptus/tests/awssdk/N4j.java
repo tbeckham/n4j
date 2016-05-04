@@ -34,9 +34,10 @@ import com.github.sjones4.youcan.youare.YouAre;
 import com.github.sjones4.youcan.youare.YouAreClient;
 import com.github.sjones4.youcan.youare.model.CreateAccountRequest;
 import com.github.sjones4.youcan.youare.model.DeleteAccountRequest;
+import com.jcraft.jsch.*;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,11 +45,14 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-class Eutester4j {
-
-    static String eucarc = System.getProperty("eucarc");
+class N4j {
+    static String CLC_IP = System.getProperty("clcip");
+    static String USER = System.getProperty("user");
+    static String PASSWORD = System.getProperty("password");
     static String endpointFile = System.getProperty("endpoints");
-    static Logger logger = Logger.getLogger(Eutester4j.class.getCanonicalName());
+    static String CREDPATH = System.getProperty("inifile", "n4j-admin.ini");
+    static String n4jCreds="/root/.euca/n4j-admin.ini";
+    static Logger logger = Logger.getLogger(N4j.class.getCanonicalName());
     static String EC2_ENDPOINT = null;
     static String AS_ENDPOINT = null;
     static String ELB_ENDPOINT = null;
@@ -59,8 +63,6 @@ class Eutester4j {
     static String SECRET_KEY = null;
     static String ACCESS_KEY = null;
     static String ACCOUNT_ID = null;
-    static String CREDPATH = null;
-    static String HOST_IP = null;
     static String NAME_PREFIX;
     static String endpoints;
     static AmazonAutoScaling as;
@@ -76,11 +78,7 @@ class Eutester4j {
     static String INSTANCE_TYPE = "m1.small";
 
     public static void getCloudInfo() throws Exception {
-        if (eucarc != null) {
-            CREDPATH = eucarc;
-        } else {
-            CREDPATH = "eucarc";
-        }
+        getAdminCreds(CLC_IP, USER, PASSWORD);
 
         if (endpointFile != null) {
             endpoints = endpointFile;
@@ -89,16 +87,16 @@ class Eutester4j {
         }
 
         print("Getting cloud information from " + CREDPATH);
-        EC2_ENDPOINT = parseEucarc(CREDPATH, "EC2_URL");
-        AS_ENDPOINT = parseEucarc(CREDPATH, "AWS_AUTO_SCALING_URL");
-        ELB_ENDPOINT = parseEucarc(CREDPATH, "AWS_ELB_URL");
-        CW_ENDPOINT = parseEucarc(CREDPATH, "AWS_CLOUDWATCH_URL");
-        IAM_ENDPOINT = parseEucarc(CREDPATH, "EUARE_URL");
-        S3_ENDPOINT = parseEucarc(CREDPATH, "S3_URL");
-        TOKENS_ENDPOINT = parseEucarc(CREDPATH, "TOKEN_URL");
-        SECRET_KEY = parseEucarc(CREDPATH, "EC2_SECRET_KEY").replace("'", "");
-        ACCESS_KEY = parseEucarc(CREDPATH, "EC2_ACCESS_KEY").replace("'", "");
-        ACCOUNT_ID = parseEucarc(CREDPATH,"EC2_ACCOUNT_NUMBER").replace("'", "");
+        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
+        AS_ENDPOINT = getAttribute(CREDPATH, "autoscaling-url");
+        ELB_ENDPOINT = getAttribute(CREDPATH, "elasticloadbalancing-url");
+        CW_ENDPOINT = getAttribute(CREDPATH, "cloudformation-url");
+        IAM_ENDPOINT = getAttribute(CREDPATH, "iam-url");
+        S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
+        TOKENS_ENDPOINT = getAttribute(CREDPATH, "sts-url");
+        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
+        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
+        ACCOUNT_ID = getAttribute(CREDPATH,"account-id");
 
         print("Updating endpoints file");
         updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -126,12 +124,7 @@ class Eutester4j {
     // Quick way to initialize just the S3 client without initializing other clients in getCloudInfo().
     // For ease of use against AWS (mainly) as well as Eucalyptus
     public static void initS3Client() throws Exception {
-        if (eucarc != null) {
-            CREDPATH = eucarc;
-        } else {
-            CREDPATH = "eucarc";
-        }
-
+        getAdminCreds(CLC_IP, USER, PASSWORD);
         if (endpointFile != null) {
             endpoints = endpointFile;
         } else {
@@ -140,11 +133,11 @@ class Eutester4j {
 
         print("Getting cloud information from " + CREDPATH);
 
-        EC2_ENDPOINT = parseEucarc(CREDPATH, "EC2_URL");
-        S3_ENDPOINT = parseEucarc(CREDPATH, "S3_URL");
+        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
+        S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
 
-        SECRET_KEY = parseEucarc(CREDPATH, "EC2_SECRET_KEY").replace("'", "");
-        ACCESS_KEY = parseEucarc(CREDPATH, "EC2_ACCESS_KEY").replace("'", "");
+        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
+        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
 
         print("Updating endpoints file");
         updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -159,12 +152,7 @@ class Eutester4j {
 
 		// Initialize everything for the first time
 		if (EC2_ENDPOINT == null || S3_ENDPOINT == null || IAM_ENDPOINT == null || ACCESS_KEY == null || SECRET_KEY == null) {
-			if (eucarc != null) {
-				CREDPATH = eucarc;
-			} else {
-				CREDPATH = "eucarc";
-			}
-
+            getAdminCreds(CLC_IP, USER, PASSWORD);
 			if (endpointFile != null) {
 				endpoints = endpointFile;
 			} else {
@@ -173,12 +161,12 @@ class Eutester4j {
 
 			print("Getting cloud information from " + CREDPATH);
 
-			EC2_ENDPOINT = parseEucarc(CREDPATH, "EC2_URL");
-			S3_ENDPOINT = parseEucarc(CREDPATH, "S3_URL");
-			IAM_ENDPOINT = parseEucarc(CREDPATH, "EUARE_URL");
+			EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
+			S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
+			IAM_ENDPOINT = getAttribute(CREDPATH, "iam-url");
 
-			ACCESS_KEY = parseEucarc(CREDPATH, "EC2_ACCESS_KEY").replace("'", "");
-			SECRET_KEY = parseEucarc(CREDPATH, "EC2_SECRET_KEY").replace("'", "");
+            SECRET_KEY = getAttribute(CREDPATH, "secret-key");
+            ACCESS_KEY = getAttribute(CREDPATH, "key-id");
 
 			print("Updating endpoints file");
 			updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -202,21 +190,11 @@ class Eutester4j {
 	}
 
     public static void minimalInit() throws Exception {
-        if (eucarc != null) {
-            CREDPATH = eucarc;
-        } else {
-            CREDPATH = "eucarc";
-        }
-        print("Getting cloud information from " + CREDPATH);
-        EC2_ENDPOINT = parseEucarc(CREDPATH, "EC2_URL") + "/";
-        if (EC2_ENDPOINT.length() > 50 ) {
-            HOST_IP = EC2_ENDPOINT.substring(15, EC2_ENDPOINT.length()-41);
-        }else {
-            HOST_IP = EC2_ENDPOINT.substring(7, EC2_ENDPOINT.length()-23);
-        }
-        print("HOST = " + HOST_IP);
-        SECRET_KEY = parseEucarc(CREDPATH, "EC2_SECRET_KEY").replace("'", "");
-        ACCESS_KEY = parseEucarc(CREDPATH, "EC2_ACCESS_KEY").replace("'", "");
+        getAdminCreds(CLC_IP, USER, PASSWORD);
+        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
+        print("HOST = " + CLC_IP);
+        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
+        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
         print("Cloud Discovery Complete");
     }
     
@@ -225,14 +203,166 @@ class Eutester4j {
         print("*****TEST NAME: " + testName);
     }
 
+    public static void getAdminCreds(String clcip, String user, String password) {
+        print("CLC IP: " + clcip);
+        SftpATTRS attrs = null;
+
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(user, clcip, 22);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            print("Establishing Connection...");
+            session.connect();
+            print("Connection established.");
+            ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
+            sftpChannel.connect();
+
+            // check to see if there are already creds created by us present
+            try {
+                attrs = sftpChannel.stat(n4jCreds);
+            } catch (Exception e){
+                print("No existing test creds found.");
+            }
+
+            // if there are not creds already created by us create them
+            if (attrs != null) {
+                print("Existing test creds found");
+            } else {
+                print("Creating test creds: " + n4jCreds);
+                String command = "eval `clcadmin-assume-system-credentials`\n" +
+                        "    DNSDOMAIN=$(euctl | grep dnsdomain | awk '{print $3}')\n" +
+                        "    euare-useraddkey admin -wd $DNSDOMAIN > /root/.euca/n4j-admin.ini\n" +
+                        "    ACCOUNTID=$(grep account-id /root/.euca/n4j-admin.ini | awk '{print $3}')\n" +
+                        "    grep \"USER = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
+                        "    if [ $? -ne 0 ]; then\n" +
+                        "      sed -i \"/\\\\[region/auser = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
+                        "      echo \"[global]\" >> /root/.euca/n4j-admin.ini; echo \"default-region = $DNSDOMAIN\" >> /root/.euca/n4j-admin.ini\n" +
+                        "    fi";
+                Channel channel=session.openChannel("exec");
+                ((ChannelExec)channel).setCommand(command);
+                channel.connect();
+                InputStream in=channel.getInputStream();
+                byte[] tmp=new byte[1024];
+                while(true){
+                    while(in.available()>0){
+                        int i=in.read(tmp, 0, 1024);
+                        if(i<0)break;
+                        print(new String(tmp, 0, i));
+                    }
+                    if(channel.isClosed()){
+                        if(in.available()>0) continue;
+                        print("Get creds exit-status: "+channel.getExitStatus());
+                        break;
+                    }
+                    try{Thread.sleep(1000);}catch(Exception ee){}
+                }
+                channel.disconnect();
+            }
+            session.disconnect();
+        }
+        catch(JSchException | IOException e) {
+            System.err.print(e);
+        }
+        // we have known creds exist or we have created them by now so save them locally for processing
+        print("Fetching n4j-admin.ini file");
+        getRemoteFile(clcip, user, password, n4jCreds, "n4j-admin.ini");
+    }
+
+    public static void getRemoteFile(String clcip, String user, String password, String remoteFile, String localFile) {
+        try
+        {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(user, clcip, 22);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect();
+            ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
+            sftpChannel.connect();
+            InputStream out;
+            out = sftpChannel.get(remoteFile);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(out));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(new File(localFile)));
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                writer.write(line);
+                // must do this: .readLine() will have stripped line endings
+                writer.newLine();
+            }
+            reader.close();
+            writer.close();
+            sftpChannel.disconnect();
+            session.disconnect();
+        }
+        catch(JSchException | SftpException | IOException e)
+        {
+            System.out.print(e);
+        }
+    }
+
+    public static void removeRemoteFile(String clcip, String user, String password, String remoteFile) {
+        SftpATTRS attrs = null;
+
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(user, clcip, 22);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            print("Establishing Connection...");
+            session.connect();
+            print("Connection established.");
+            ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
+            sftpChannel.connect();
+
+            // check to see if there are already creds created by us present
+            try {
+                attrs = sftpChannel.stat(remoteFile);
+            } catch (Exception e){
+                print("No existing test creds found.");
+            }
+
+            // if there are creds already created by us delete them
+            if (attrs == null) {
+                print("Nothing to delete.");
+            } else {
+                print("Removing test creds: " + remoteFile);
+                String command = "rm -rf " + remoteFile;
+                Channel channel=session.openChannel("exec");
+                ((ChannelExec)channel).setCommand(command);
+                channel.connect();
+                InputStream in=channel.getInputStream();
+                byte[] tmp=new byte[1024];
+                while(true){
+                    while(in.available()>0){
+                        int i=in.read(tmp, 0, 1024);
+                        if(i<0)break;
+                        print(new String(tmp, 0, i));
+                    }
+                    if(channel.isClosed()){
+                        if(in.available()>0) continue;
+                        print("Remove remote file exit-status: "+channel.getExitStatus());
+                        break;
+                    }
+                    try{Thread.sleep(1000);}catch(Exception ee){}
+                }
+                channel.disconnect();
+            }
+            session.disconnect();
+        }
+        catch(JSchException | IOException e) {
+            System.err.print(e);
+        }
+    }
+
     /**
      * create ec2 connection based with supplied accessKey and secretKey
      *
      * @param accessKey
      * @param secretKey
      */
-    public static AmazonEC2 getEc2Client(String accessKey, String secretKey,
-                                         String endpoint) {
+    static AmazonEC2 getEc2Client(String accessKey, String secretKey,
+                                  String endpoint) {
         AWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
         final AmazonEC2 ec2 = new AmazonEC2Client(creds);
         ec2.setEndpoint(endpoint);
@@ -247,8 +377,8 @@ class Eutester4j {
         return as;
     }
 
-    public static AmazonElasticLoadBalancing getElbClient(String accessKey, String secretKey,
-                                                          String endpoint) {
+    private static AmazonElasticLoadBalancing getElbClient(String accessKey, String secretKey,
+                                                           String endpoint) {
         AWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
         final AmazonElasticLoadBalancing elb = new AmazonElasticLoadBalancingClient(creds);
         elb.setEndpoint(endpoint);
@@ -294,17 +424,14 @@ class Eutester4j {
      * @return the value of the field from eucarc file
      * @throws IOException
      */
-    public static String parseEucarc(String credpath, String field)
-            throws IOException {
+    public static String getAttribute(String credpath, String field) throws IOException {
         Charset charset = Charset.forName("UTF-8");
-        String creds = credpath;
         String result = null;
         try {
-            List<String> lines = Files.readAllLines(Paths.get(creds), charset);
-            CharSequence find = field;
+            List<String> lines = Files.readAllLines(Paths.get(credpath), charset);
             for (String line : lines) {
-                if (line.contains(find)) {
-                    result = line.substring(line.lastIndexOf('=') + 1);
+                if (line.contains(field)) {
+                    result = line.substring(line.lastIndexOf('=') + 2);
                     break;
                 }
             }
@@ -518,12 +645,10 @@ class Eutester4j {
         String imageId=null;
         final DescribeImagesResult imagesResult = ec2
                 .describeImages(new DescribeImagesRequest().withFilters(
-                        new Filter().withName("image-type").withValues(
-                                "machine"),
-                        new Filter().withName("root-device-type").withValues(
-                                "instance-store"),
-                        new Filter().withName("is-public").withValues(
-                                "true")));
+                        new Filter().withName("image-type").withValues("machine"),
+                        new Filter().withName("root-device-type").withValues("instance-store"),
+                        new Filter().withName("is-public").withValues("true"),
+                        new Filter().withName("virtualization-type").withValues("hvm")));
         for (Image i : imagesResult.getImages()){
             if (!i.getImageLocation().equals("imaging-worker-v1/eucalyptus-imaging-worker-image.img.manifest.xml") &&
                     !i.getImageLocation().equals("loadbalancer-v1/eucalyptus-load-balancer-image.img.manifest.xml") &&
@@ -1115,6 +1240,13 @@ class Eutester4j {
         keys.put("sk", secretKey);
 
         return keys;
+    }
+
+    public static void deleteTestCreds() {
+        print("Deleting accesskey " + ACCESS_KEY);
+        youAre.deleteAccessKey(new DeleteAccessKeyRequest("admin", ACCESS_KEY));
+        print("Deleting remote file " + n4jCreds + " from the CLC");
+        removeRemoteFile(CLC_IP, USER, PASSWORD, n4jCreds);
     }
 
     @SafeVarargs

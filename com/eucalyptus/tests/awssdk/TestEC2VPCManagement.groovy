@@ -32,7 +32,7 @@ import com.amazonaws.services.ec2.model.DhcpConfiguration
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static N4j.*;
 
 
 /**

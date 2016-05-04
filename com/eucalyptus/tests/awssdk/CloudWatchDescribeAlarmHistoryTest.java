@@ -9,8 +9,8 @@ import org.testng.annotations.Test;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.cw;
-import static com.eucalyptus.tests.awssdk.Eutester4j.getCloudInfo;
+import static com.eucalyptus.tests.awssdk.N4j.cw;
+import static com.eucalyptus.tests.awssdk.N4j.getCloudInfo;
 
 public class CloudWatchDescribeAlarmHistoryTest {
     @Test

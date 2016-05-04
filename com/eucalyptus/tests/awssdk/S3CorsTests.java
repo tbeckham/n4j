@@ -1,22 +1,18 @@
 package com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.print;
-import static com.eucalyptus.tests.awssdk.Eutester4j.testInfo;
-import static com.eucalyptus.tests.awssdk.Eutester4j.assertThat;
-import static com.eucalyptus.tests.awssdk.Eutester4j.eucaUUID;
+import static com.eucalyptus.tests.awssdk.N4j.print;
+import static com.eucalyptus.tests.awssdk.N4j.testInfo;
+import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
 
 //LPT The below import is only needed for running against Eucalyptus
-import static com.eucalyptus.tests.awssdk.Eutester4j.initS3ClientWithNewAccount;
+import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
 
 //LPT The below two imports are only needed for running against AWS
-import static com.eucalyptus.tests.awssdk.Eutester4j.initS3Client;
-import static com.eucalyptus.tests.awssdk.Eutester4j.s3;
 
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.testng.annotations.AfterClass;
@@ -27,24 +23,11 @@ import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AccessControlList;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
-import com.amazonaws.services.s3.model.BucketLoggingConfiguration;
-import com.amazonaws.services.s3.model.BucketTaggingConfiguration;
-import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.CORSRule;
 import com.amazonaws.services.s3.model.CORSRule.AllowedMethods;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.CanonicalGrantee;
-import com.amazonaws.services.s3.model.Grant;
-import com.amazonaws.services.s3.model.GroupGrantee;
 import com.amazonaws.services.s3.model.Owner;
-import com.amazonaws.services.s3.model.Permission;
-import com.amazonaws.services.s3.model.SetBucketLoggingConfigurationRequest;
-import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
-import com.amazonaws.services.s3.model.TagSet;
 
 /**
  * <p>
@@ -103,7 +86,7 @@ public class S3CorsTests {
   public void teardown() throws Exception {
     print("### POST SUITE CLEANUP - " + this.getClass().getSimpleName());
     //LPT Don't do this with AWS, won't let you create an account via API
-    Eutester4j.deleteAccount(account);
+    N4j.deleteAccount(account);
     s3 = null;
   }
 

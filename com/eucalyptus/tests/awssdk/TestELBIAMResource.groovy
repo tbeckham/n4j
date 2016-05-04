@@ -23,10 +23,10 @@ import com.amazonaws.services.identitymanagement.model.GetUserPolicyRequest
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  * This application tests IAM policy resource ARNs for ELB load balancers.
@@ -46,7 +46,7 @@ class TestELBIAMResource {
 
   public TestELBIAMResource() {
     minimalInit()
-    this.host = HOST_IP
+    this.host = CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 
@@ -117,21 +117,21 @@ class TestELBIAMResource {
         print( "Detected account number: ${accountNumber}" )
 
         String userName = "${namePrefix}user1"
-        print( "Creating user for IAM policy testing: ${userName}" )
+        print( "Creating USER for IAM policy testing: ${userName}" )
         String userId = createUser( new CreateUserRequest(
           userName: userName,
           path: '/'
         ) ).with {
           user?.userId
         }
-        print( "Created user with ID: ${userId}" )
+        print( "Created USER with ID: ${userId}" )
         cleanupTasks.add{
-          print( "Deleting user: ${userName}" )
+          print( "Deleting USER: ${userName}" )
           deleteUser( new DeleteUserRequest( userName: userName ) )
         }
 
         String policyName = "${namePrefix}policy1"
-        print( "Authorizing user for all actions on ${loadBalancerName1}" )
+        print( "Authorizing USER for all actions on ${loadBalancerName1}" )
         putUserPolicy( new PutUserPolicyRequest(
           userName: userName,
           policyName: policyName,
@@ -149,21 +149,21 @@ class TestELBIAMResource {
             """.stripMargin( ).trim( )
         ) )
         cleanupTasks.add{
-          print( "Deleting user ${userName} policy ${policyName}" )
+          print( "Deleting USER ${userName} policy ${policyName}" )
           deleteUserPolicy( new DeleteUserPolicyRequest( userName: userName, policyName: policyName ) )
         }
         getUserPolicy( new GetUserPolicyRequest(  userName: userName, policyName: policyName ) ).with {
           print( policyDocument )
         }
 
-        print( "Creating access key for user ${userName}" )
+        print( "Creating access key for USER ${userName}" )
         userCredentials = createAccessKey( new CreateAccessKeyRequest( userName: userName ) ).with {
           accessKey?.with {
             new StaticCredentialsProvider( new BasicAWSCredentials( accessKeyId, secretAccessKey ) )
           }
         }
         cleanupTasks.add{
-          print( "Deleting access key for user ${userName}" )
+          print( "Deleting access key for USER ${userName}" )
           deleteAccessKey( new DeleteAccessKeyRequest(
               userName: userName,
               accessKeyId: userCredentials.credentials.AWSAccessKeyId
@@ -198,11 +198,11 @@ class TestELBIAMResource {
         }
       }
 
-//      print( "Waiting a while for user credentials to propagate .." )
+//      print( "Waiting a while for USER credentials to propagate .." )
 //      sleep( 30000 )
 
       getELBClient( userCredentials ).with {
-        print( "Adding tag to load balancer as user with specific resource permissions: ${loadBalancerName1}" )
+        print( "Adding tag to load balancer as USER with specific resource permissions: ${loadBalancerName1}" )
         addTags( new AddTagsRequest(
             loadBalancerNames: [ loadBalancerName1 ],
             tags: [
@@ -211,7 +211,7 @@ class TestELBIAMResource {
         ))
         print( "Added tag to ${loadBalancerName1}" )
 
-        print( "Adding tag to load balancer as user with specific resource permissions: ${loadBalancerName2}" )
+        print( "Adding tag to load balancer as USER with specific resource permissions: ${loadBalancerName2}" )
         try {
           addTags( new AddTagsRequest(
               loadBalancerNames: [ loadBalancerName2 ],

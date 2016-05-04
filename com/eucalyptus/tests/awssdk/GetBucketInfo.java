@@ -8,8 +8,8 @@ import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.Grant;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.initS3Client;
-import static com.eucalyptus.tests.awssdk.Eutester4j.s3;
+import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
+import static com.eucalyptus.tests.awssdk.N4j.s3;
 
 
 public class GetBucketInfo {

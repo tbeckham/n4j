@@ -26,10 +26,10 @@ import com.github.sjones4.youcan.youare.YouAreClient
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit;
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP;
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY;
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY;
+import static N4j.minimalInit;
+import static N4j.CLC_IP;
+import static N4j.ACCESS_KEY;
+import static N4j.SECRET_KEY;
 
 /**
  * This application tests administration for CF resources.
@@ -49,7 +49,7 @@ class TestCFAdministration {
 
   public TestCFAdministration( ) {
     minimalInit()
-    this.host = HOST_IP
+    this.host = CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 
@@ -89,7 +89,7 @@ class TestCFAdministration {
 
     final List<Runnable> cleanupTasks = [] as List<Runnable>
     try {
-      final String userName = "${namePrefix}cf-test-user"
+      final String userName = "${namePrefix}cf-test-USER"
       AWSCredentialsProvider cfAccountCredentials = null
       AWSCredentialsProvider cfUserCredentials = null
       final YouAre youAre = getYouAreClient( credentials )
@@ -123,22 +123,22 @@ class TestCFAdministration {
           assertThat( cfAccountCredentials != null, "Expected admin credentials" )
           print( "Created cf account access key: ${cfAccountCredentials.credentials.AWSAccessKeyId}" )
 
-          print( "Creating user in admin account for policy testing: ${userName}" )
+          print( "Creating USER in admin account for policy testing: ${userName}" )
           final String userId = createUser( new CreateUserRequest( userName: userName, path: '/' ) ).with {
             user.userId
           }
-          assertThat( userId != null, "Expected user ID" )
-          print( "Created admin user with number: ${userId}" )
+          assertThat( userId != null, "Expected USER ID" )
+          print( "Created admin USER with number: ${userId}" )
 
-          print( "Creating access key for admin user: ${userName}" )
+          print( "Creating access key for admin USER: ${userName}" )
           cfUserCredentials = createAccessKey( new CreateAccessKeyRequest( userName: userName ) ).with {
             accessKey?.with {
               new StaticCredentialsProvider( new BasicAWSCredentials( accessKeyId, secretAccessKey ) )
             }
           }
 
-          assertThat( cfUserCredentials != null, "Expected user credentials" )
-          print( "Created cf user access key: ${cfAccountCredentials.credentials.AWSAccessKeyId}" )
+          assertThat( cfUserCredentials != null, "Expected USER credentials" )
+          print( "Created cf USER access key: ${cfAccountCredentials.credentials.AWSAccessKeyId}" )
 
           void
         }
@@ -283,43 +283,43 @@ class TestCFAdministration {
       }
 
       getCloudFormationClient( cfUserCredentials ).with {
-        println( "Verifying user sees permitted stack when describing" )
+        println( "Verifying USER sees permitted stack when describing" )
         describeStacks( ).with {
           assertThat( 1 == stacks?.size(), "Expected 1 stack" )
         }
 
-        println( "Verifying user sees permitted stack when describing by name" )
+        println( "Verifying USER sees permitted stack when describing by name" )
         describeStacks( new DescribeStacksRequest( stackName: stackName1 ) ).with {
           assertThat( 1 == stacks?.size(), "Expected 1 stack" )
         }
 
-        println( "Verifying user sees permitted stack when listing" )
+        println( "Verifying USER sees permitted stack when listing" )
         listStacks( ).with {
           assertThat( 1 == stackSummaries?.size(), "Expected 1 stack" )
         }
 
-        println( "Verifying user can describe stack events" )
+        println( "Verifying USER can describe stack events" )
         describeStackEvents( new DescribeStackEventsRequest(
                 stackName: stackName1
         ) ).with {
           assertThat( !stackEvents?.empty, "Expected stack events" )
         }
 
-        println( "Verifying user can describe stack resources" )
+        println( "Verifying USER can describe stack resources" )
         describeStackResources( new DescribeStackResourcesRequest(
                 stackName: stackName1
         ) ).with {
           assertThat( !stackResources?.empty, "Expected stack resources" )
         }
 
-        println( "Verifying user can list stack resources" )
+        println( "Verifying USER can list stack resources" )
         listStackResources( new ListStackResourcesRequest(
                 stackName: stackName1
         ) ).with {
           assertThat( !stackResourceSummaries?.empty, "Expected stack resources" )
         }
 
-        println( "Verifying user can delete stack ${stackName1}" )
+        println( "Verifying USER can delete stack ${stackName1}" )
         deleteStack( new DeleteStackRequest( stackName: stackName1 ) )
 
         print( "Waiting for stack ${stackName1} deletion" )
