@@ -7,6 +7,8 @@
             <class name="com.eucalyptus.tests.awssdk.TestAutoScalingELBInstanceHealthMonitoring"/>
             <class name="com.eucalyptus.tests.awssdk.TestAutoScalingELBReferenceValidation"/>
             <class name="com.eucalyptus.tests.awssdk.TestELBAttributes"/>
+            <class name="com.eucalyptus.tests.awssdk.TestELBIAMResource"/>
+            <class name="com.eucalyptus.tests.awssdk.TestELBTagging"/>
         </classes>>
     </test>
 </suite>
