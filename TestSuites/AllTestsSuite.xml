@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="Eutester4j Test Suite">
+<suite name="N4j Test Suite">
 
     <suite-files>
         <suite-file path="CloudWatchSuite.xml" />
@@ -13,7 +13,7 @@
 
     <test name="Eutester4j_Sanity_Test">
         <classes>
-            <class name="com.eucalyptus.tests.awssdk.Eutester4jTest"/>
+            <class name="com.eucalyptus.tests.awssdk.N4jTest"/>
         </classes>
     </test>
 </suite>

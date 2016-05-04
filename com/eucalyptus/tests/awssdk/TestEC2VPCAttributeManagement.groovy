@@ -12,10 +12,10 @@ import com.amazonaws.util.TimingInfo
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.EC2_ENDPOINT
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.EC2_ENDPOINT
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  * This application tests management of attributes EC2 VPC.

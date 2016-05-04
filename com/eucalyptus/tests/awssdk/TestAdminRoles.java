@@ -1,5 +1,5 @@
 /*************************************************************************
-* Copyright 2009-2013 Eucalyptus Systems, Inc.
+* Copyright 2009-2016 Eucalyptus Systems, Inc.
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.github.sjones4.youcan.youare.model.Account;
 import org.testng.annotations.Test;
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 import java.util.ArrayList;
 import java.util.Collections;

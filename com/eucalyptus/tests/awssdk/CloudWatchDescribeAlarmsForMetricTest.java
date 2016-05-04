@@ -6,7 +6,7 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 public class CloudWatchDescribeAlarmsForMetricTest {
     @Test

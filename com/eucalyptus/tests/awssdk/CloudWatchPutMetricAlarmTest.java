@@ -5,7 +5,7 @@ import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
 import com.amazonaws.services.cloudwatch.model.Statistic;
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 public class CloudWatchPutMetricAlarmTest {
     @Test

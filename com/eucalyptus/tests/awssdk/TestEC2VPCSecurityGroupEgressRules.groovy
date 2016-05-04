@@ -10,10 +10,10 @@ import com.amazonaws.services.ec2.model.*
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 
 /**
@@ -35,7 +35,7 @@ class TestEC2VPCSecurityGroupEgressRules {
 
     public TestEC2VPCSecurityGroupEgressRules() {
         minimalInit()
-        this.host= HOST_IP
+        this.host= CLC_IP
         this.credentials = new StaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY))
     }
 

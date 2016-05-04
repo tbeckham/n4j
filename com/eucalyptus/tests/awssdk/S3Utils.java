@@ -1,7 +1,7 @@
 package com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.assertThat;
-import static com.eucalyptus.tests.awssdk.Eutester4j.print;
+import static com.eucalyptus.tests.awssdk.N4j.assertThat;
+import static com.eucalyptus.tests.awssdk.N4j.print;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.util.Iterator;

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 public class CloudWatchGetMetricStatisticsTest {
     @Test

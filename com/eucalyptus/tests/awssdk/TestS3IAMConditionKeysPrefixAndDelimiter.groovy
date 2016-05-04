@@ -29,10 +29,10 @@ import org.testng.annotations.Test
 
 import java.nio.charset.StandardCharsets
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
+import static N4j.minimalInit
+import static N4j.CLC_IP
+import static N4j.ACCESS_KEY
+import static N4j.SECRET_KEY
 
 /**
  * Tests IAM prefix and delimiter condition keys for S3.
@@ -54,7 +54,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
 
   TestS3IAMConditionKeysPrefixAndDelimiter( ) {
     minimalInit()
-    this.host = HOST_IP
+    this.host = CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 
@@ -120,7 +120,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         }
 
         // Get credentials for admin account
-        print("Creating access key for test account admin user: ${accountName}")
+        print("Creating access key for test account admin USER: ${accountName}")
         YouAre adminIam = getYouAreClient( credentials )
         adminIam.addRequestHandler(new AbstractRequestHandler() {
           public void beforeRequest(final Request<?> request) {
@@ -134,8 +134,8 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
             }
           }
         }
-        assertTrue(adminCredentials != null, "Expected test acount admin user credentials")
-        print("Created test acount admin user access key: ${adminCredentials.credentials.AWSAccessKeyId}")
+        assertTrue(adminCredentials != null, "Expected test acount admin USER credentials")
+        print("Created test acount admin USER access key: ${adminCredentials.credentials.AWSAccessKeyId}")
 
         adminCredentials
       }
@@ -185,19 +185,19 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
 
       AWSCredentialsProvider userCredentials = getYouAreClient( adminCredentials ).with {
         cleanupTasks.add{
-          println( "Deleting user ${userName}" )
+          println( "Deleting USER ${userName}" )
           deleteUser( new DeleteUserRequest(
               userName: userName
           ) )
         }
-        print( "Creating user ${userName}" )
+        print( "Creating USER ${userName}" )
         createUser( new CreateUserRequest(
             userName: userName,
             path: '/'
         ) )
 
         String policyName = "${namePrefix}policy1"
-        print( "Creating user policy ${policyName}" )
+        print( "Creating USER policy ${policyName}" )
         putUserPolicy( new PutUserPolicyRequest(
             userName: userName,
             policyName: policyName,
@@ -225,14 +225,14 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         ) )
 
         cleanupTasks.add{
-          print( "Deleting user policy ${policyName}" )
+          print( "Deleting USER policy ${policyName}" )
           deleteUserPolicy( new DeleteUserPolicyRequest(
               userName: userName,
               policyName: policyName
           ) )
         }
 
-        print( "Creating access key for user ${userName}" )
+        print( "Creating access key for USER ${userName}" )
         AWSCredentialsProvider userCredentials = createAccessKey( new CreateAccessKeyRequest(
             userName: userName
         ) ).with {
@@ -242,7 +242,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         }
 
         cleanupTasks.add {
-          print( "Deleting access key for user ${userName}" )
+          print( "Deleting access key for USER ${userName}" )
           deleteAccessKey( new DeleteAccessKeyRequest(
               userName: userName,
               accessKeyId: userCredentials.credentials.AWSAccessKeyId
@@ -342,7 +342,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         }
 
         // Get credentials for admin account
-        print("Creating access key for test account admin user: ${accountName}")
+        print("Creating access key for test account admin USER: ${accountName}")
         YouAre adminIam = getYouAreClient( credentials )
         adminIam.addRequestHandler(new AbstractRequestHandler() {
           public void beforeRequest(final Request<?> request) {
@@ -356,27 +356,27 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
             }
           }
         }
-        assertTrue(adminCredentials != null, "Expected test acount admin user credentials")
-        print("Created test acount admin user access key: ${adminCredentials.credentials.AWSAccessKeyId}")
+        assertTrue(adminCredentials != null, "Expected test acount admin USER credentials")
+        print("Created test acount admin USER access key: ${adminCredentials.credentials.AWSAccessKeyId}")
 
         adminCredentials
       }
 
       AWSCredentialsProvider userCredentials = getYouAreClient( adminCredentials ).with {
         cleanupTasks.add{
-          println( "Deleting user ${userName}" )
+          println( "Deleting USER ${userName}" )
           deleteUser( new DeleteUserRequest(
               userName: userName
           ) )
         }
-        print( "Creating user ${userName}" )
+        print( "Creating USER ${userName}" )
         createUser( new CreateUserRequest(
             userName: userName,
             path: '/'
         ) )
 
         String policyName = "${namePrefix}policy1"
-        print( "Creating user policy ${policyName}" )
+        print( "Creating USER policy ${policyName}" )
         putUserPolicy( new PutUserPolicyRequest(
             userName: userName,
             policyName: policyName,
@@ -416,14 +416,14 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         ) )
 
         cleanupTasks.add{
-          print( "Deleting user policy ${policyName}" )
+          print( "Deleting USER policy ${policyName}" )
           deleteUserPolicy( new DeleteUserPolicyRequest(
               userName: userName,
               policyName: policyName
           ) )
         }
 
-        print( "Creating access key for user ${userName}" )
+        print( "Creating access key for USER ${userName}" )
         AWSCredentialsProvider userCredentials = createAccessKey( new CreateAccessKeyRequest(
             userName: userName
         ) ).with {
@@ -433,7 +433,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         }
 
         cleanupTasks.add {
-          print( "Deleting access key for user ${userName}" )
+          print( "Deleting access key for USER ${userName}" )
           deleteAccessKey( new DeleteAccessKeyRequest(
               userName: userName,
               accessKeyId: userCredentials.credentials.AWSAccessKeyId
@@ -494,7 +494,7 @@ class TestS3IAMConditionKeysPrefixAndDelimiter {
         try {
           print( "Putting object to ${bucketName} outside of home directory, should fail" )
           putObject( bucketName, "foo1", new ByteArrayInputStream( "DATA".getBytes( "utf-8" ) ), new ObjectMetadata( ) );
-          assertThat( false, "Expected put object to fail for admin user due to permissions" )
+          assertThat( false, "Expected put object to fail for admin USER due to permissions" )
         } catch ( AmazonServiceException e ) {
           print( "Expected error putting object without permission: ${e}" )
         }

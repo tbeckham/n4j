@@ -4,7 +4,7 @@ import com.amazonaws.services.cloudwatch.model.SetAlarmStateRequest;
 import com.amazonaws.services.cloudwatch.model.StateValue;
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 public class CloudWatchStateChangeTest {
     @Test

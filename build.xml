@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--<project name="Eutester4J" basedir="." default="clean-build">-->
-<project name="Eutester4J" basedir="." default="clean-build" xmlns:ivy="antlib:org.apache.ivy.ant">
+<!--<project name="N4J" basedir="." default="clean-build">-->
+<project name="N4J" basedir="." default="clean-build" xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<!-- These properties' default values can be overridden on the ant command line, e.g: -->
 	<!-- ant clean-build -Deucarc=/my/path/to/eucarc -Dtests=CI-run.xml -->
@@ -9,8 +9,10 @@
     <property name="build.dir" value="build"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
     <property name="deps.dir" value="dependencies"/>
-    <property name="testng.output.dir" value="eutester4j_results"/>
-    <property name="eucarc" value="eucarc"/>
+    <property name="testng.output.dir" value="n4j_results"/>
+    <property name="clcip" value="192.168.0.10"/>
+    <property name="user" value="root"/>
+    <property name="password" value="foobar"/>
     <property name="endpoints" value="endpoints.xml"/>
     <property name="tests" value="AllTestsSuite.xml"/>
     <property name="ivy.cache.ttl.default" value="1d"/>
@@ -73,7 +75,9 @@
         <mkdir dir="${testng.output.dir}"/>
         <testng outputdir="${testng.output.dir}" classpathref="classpath" haltonfailure="true">
             <xmlfileset dir="./TestSuites" includes="${tests}"/>
-            <jvmarg value="-Deucarc=${eucarc}" />
+            <jvmarg value="-Dclcip=${clcip}" />
+            <jvmarg value="-Duser=${user}" />
+            <jvmarg value="-Dpassword=${password}" />
             <jvmarg value="-Dcom.amazonaws.regions.RegionUtils.fileOverride=${endpoints}"/>
         </testng>
     </target>

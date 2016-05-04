@@ -21,11 +21,11 @@ import com.github.sjones4.youcan.youprop.model.ModifyPropertyValueRequest
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.EC2_ENDPOINT
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.EC2_ENDPOINT
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  * This application tests quotas and limits for EC2 VPC resources.
@@ -45,7 +45,7 @@ class TestEC2VPCQuotasLimits {
 
   public TestEC2VPCQuotasLimits() {
     minimalInit()
-    this.host = HOST_IP
+    this.host = CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 

@@ -1,8 +1,8 @@
 package com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.assertThat;
-import static com.eucalyptus.tests.awssdk.Eutester4j.print;
-import static com.eucalyptus.tests.awssdk.Eutester4j.testInfo;
+import static com.eucalyptus.tests.awssdk.N4j.assertThat;
+import static com.eucalyptus.tests.awssdk.N4j.print;
+import static com.eucalyptus.tests.awssdk.N4j.testInfo;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.util.Map;
@@ -18,7 +18,6 @@ import com.amazonaws.services.identitymanagement.model.CreateRoleRequest;
 import com.amazonaws.services.identitymanagement.model.CreateRoleResult;
 import com.amazonaws.services.identitymanagement.model.PutRolePolicyRequest;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
@@ -53,36 +52,30 @@ public class EUCA8948 {
 		try {
 			account = this.getClass().getSimpleName().toLowerCase();
 
-			if (Eutester4j.eucarc != null) {
-				Eutester4j.CREDPATH = Eutester4j.eucarc;
-			} else {
-				Eutester4j.CREDPATH = "eucarc";
-			}
+			print("Getting cloud information from " + N4j.CREDPATH);
 
-			print("Getting cloud information from " + Eutester4j.CREDPATH);
+			N4j.IAM_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "iam-url");
+			N4j.TOKENS_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "sts-url");
+			N4j.S3_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "s3-url");
 
-			Eutester4j.IAM_ENDPOINT = Eutester4j.parseEucarc(Eutester4j.CREDPATH, "EUARE_URL");
-			Eutester4j.TOKENS_ENDPOINT = Eutester4j.parseEucarc(Eutester4j.CREDPATH, "TOKEN_URL");
-			Eutester4j.S3_ENDPOINT = Eutester4j.parseEucarc(Eutester4j.CREDPATH, "S3_URL");
+			N4j.ACCESS_KEY = N4j.getAttribute(N4j.CREDPATH, "key-id");
+			N4j.SECRET_KEY = N4j.getAttribute(N4j.CREDPATH, "secret-key");
 
-			Eutester4j.ACCESS_KEY = Eutester4j.parseEucarc(Eutester4j.CREDPATH, "EC2_ACCESS_KEY").replace("'", "");
-			Eutester4j.SECRET_KEY = Eutester4j.parseEucarc(Eutester4j.CREDPATH, "EC2_SECRET_KEY").replace("'", "");
-
-			Eutester4j.youAre = Eutester4j.getYouAreClient(Eutester4j.ACCESS_KEY, Eutester4j.SECRET_KEY, Eutester4j.IAM_ENDPOINT);
+			N4j.youAre = N4j.getYouAreClient(N4j.ACCESS_KEY, N4j.SECRET_KEY, N4j.IAM_ENDPOINT);
 
 			// Create a new account if one does not exist
 			try {
-				Eutester4j.createAccount(account);
+				N4j.createAccount(account);
 			} catch (Exception e) {
 				// Account may already exist, try getting the keys
 			}
-			Map<String, String> keyMap = Eutester4j.getUserKeys(account, "admin");
+			Map<String, String> keyMap = N4j.getUserKeys(account, "admin");
 
 			accessKey = keyMap.get("ak");
 			secretKey = keyMap.get("sk");
 
-			userYouAre = Eutester4j.getYouAreClient(accessKey, secretKey, Eutester4j.IAM_ENDPOINT);
-			eucalyptusSts = getSecurityTokenService(Eutester4j.ACCESS_KEY, Eutester4j.SECRET_KEY, Eutester4j.TOKENS_ENDPOINT);
+			userYouAre = N4j.getYouAreClient(accessKey, secretKey, N4j.IAM_ENDPOINT);
+			eucalyptusSts = getSecurityTokenService(N4j.ACCESS_KEY, N4j.SECRET_KEY, N4j.TOKENS_ENDPOINT);
 		} catch (Exception e) {
 			try {
 				teardown();
@@ -102,7 +95,7 @@ public class EUCA8948 {
 	@AfterClass
 	public void teardown() throws Exception {
 		print("*** POST SUITE CLEANUP ***");
-		Eutester4j.deleteAccount(account);
+		N4j.deleteAccount(account);
 	}
 
 	@Test
@@ -133,8 +126,8 @@ public class EUCA8948 {
 			print("Expires = " + roleCreds.getExpiration());
 
 			print(account + ": Initializing s3 client with the temporary credentials");
-			final AmazonS3 s3 = Eutester4j.getS3Client(new BasicSessionCredentials( roleCreds.getAccessKeyId( ), roleCreds.getSecretAccessKey( ),
-					roleCreds.getSessionToken( ) ), Eutester4j.S3_ENDPOINT );
+			final AmazonS3 s3 = N4j.getS3Client(new BasicSessionCredentials( roleCreds.getAccessKeyId( ), roleCreds.getSecretAccessKey( ),
+					roleCreds.getSessionToken( ) ), N4j.S3_ENDPOINT );
 			print("The owner of the account executing this call is " + s3.getS3AccountOwner());
 
 			print("Sleeping for " + (DURATION + 60) + " seconds to allow the credentials to expire");

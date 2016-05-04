@@ -18,11 +18,11 @@ import com.github.sjones4.youcan.youare.model.DeleteAccountRequest
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.EC2_ENDPOINT
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.EC2_ENDPOINT
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  * This application tests IAM policy for EC2 VPC resource conditions.
@@ -42,7 +42,7 @@ class TestEC2VPCResourceConditionPolicy {
 
   public TestEC2VPCResourceConditionPolicy() {
     minimalInit()
-    this.host=HOST_IP
+    this.host=CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 
@@ -118,7 +118,7 @@ class TestEC2VPCResourceConditionPolicy {
         print("Created vpc account access key: ${vpcAccountCredentials.credentials.AWSAccessKeyId}")
       }
 
-      print( "Creating 'permitted' test user in vpc account ${accountName}" )
+      print( "Creating 'permitted' test USER in vpc account ${accountName}" )
       getYouAreClient( vpcAccountCredentials ).with {
         createUser( new CreateUserRequest(
           path: '/',
@@ -131,7 +131,7 @@ class TestEC2VPCResourceConditionPolicy {
           }
         }
         assertThat( vpcPermCredentials != null, "Expected credentials" )
-        print( "Created vpc user access key: ${vpcPermCredentials.credentials.AWSAccessKeyId}" )
+        print( "Created vpc USER access key: ${vpcPermCredentials.credentials.AWSAccessKeyId}" )
         void
       }
 
@@ -158,7 +158,7 @@ class TestEC2VPCResourceConditionPolicy {
 
       }
 
-      print( "Creating 'denied' test user in vpc account ${accountName}" )
+      print( "Creating 'denied' test USER in vpc account ${accountName}" )
       getYouAreClient( vpcAccountCredentials ).with {
         createUser( new CreateUserRequest(
             path: '/',
@@ -171,7 +171,7 @@ class TestEC2VPCResourceConditionPolicy {
           }
         }
         assertThat( vpcDenyCredentials != null, "Expected credentials" )
-        print( "Created vpc user access key: ${vpcDenyCredentials.credentials.AWSAccessKeyId}" )
+        print( "Created vpc USER access key: ${vpcDenyCredentials.credentials.AWSAccessKeyId}" )
         void
       }
 
@@ -214,7 +214,7 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getYouAreClient( vpcAccountCredentials ).with {
-          print( "Adding policy for allow user" )
+          print( "Adding policy for allow USER" )
           putUserPolicy( new PutUserPolicyRequest(
               userName: 'permitted',
               policyName: 'allow',
@@ -261,7 +261,7 @@ class TestEC2VPCResourceConditionPolicy {
               """.stripIndent()
           ) )
 
-          print( "Adding policy for deny user" )
+          print( "Adding policy for deny USER" )
           putUserPolicy( new PutUserPolicyRequest(
               userName: 'denied',
               policyName: 'deny',
@@ -321,7 +321,7 @@ class TestEC2VPCResourceConditionPolicy {
         print( "Created security group ${securityGroupName} with identifier ${groupId}" )
 
         getEC2Client( vpcPermCredentials ).with {
-          print( "Authorizing egress with allow user" )
+          print( "Authorizing egress with allow USER" )
           authorizeSecurityGroupEgress( new AuthorizeSecurityGroupEgressRequest(
               groupId: groupId,
               ipPermissions: [
@@ -332,7 +332,7 @@ class TestEC2VPCResourceConditionPolicy {
               ]
           ) )
 
-          print( "Authorizing ingress with allow user" )
+          print( "Authorizing ingress with allow USER" )
           authorizeSecurityGroupIngress( new AuthorizeSecurityGroupIngressRequest(
               groupId: groupId,
               ipPermissions: [
@@ -345,7 +345,7 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcDenyCredentials ).with {
-          print( "Authorizing egress with deny user" )
+          print( "Authorizing egress with deny USER" )
           try {
             authorizeSecurityGroupEgress( new AuthorizeSecurityGroupEgressRequest(
                 groupId: groupId,
@@ -356,12 +356,12 @@ class TestEC2VPCResourceConditionPolicy {
                     )
                 ]
             ) )
-            assertThat( false, "Expected authorize egress failure for user without permission in vpc")
+            assertThat( false, "Expected authorize egress failure for USER without permission in vpc")
           } catch( Exception e ) {
             print( "Expected failure for authorize egress denied ${e}" )
           }
 
-          print( "Authorizing ingress with deny user" )
+          print( "Authorizing ingress with deny USER" )
           try {
             authorizeSecurityGroupIngress( new AuthorizeSecurityGroupIngressRequest(
                 groupId: groupId,
@@ -372,12 +372,12 @@ class TestEC2VPCResourceConditionPolicy {
                     )
                 ]
             ) )
-            assertThat( false, "Expected authorize ingress failure for user without permission in vpc")
+            assertThat( false, "Expected authorize ingress failure for USER without permission in vpc")
           } catch( Exception e ) {
             print( "Expected failure for authorize ingress denied ${e}" )
           }
 
-          print( "Revoking egress with deny user" )
+          print( "Revoking egress with deny USER" )
           try {
             revokeSecurityGroupEgress( new RevokeSecurityGroupEgressRequest(
                 groupId: groupId,
@@ -388,12 +388,12 @@ class TestEC2VPCResourceConditionPolicy {
                     )
                 ]
             ) )
-            assertThat( false, "Expected revoke egress failure for user without permission in vpc")
+            assertThat( false, "Expected revoke egress failure for USER without permission in vpc")
           } catch( Exception e ) {
             print( "Expected failure for revoke egress denied ${e}" )
           }
 
-          print( "Revoking ingress with deny user" )
+          print( "Revoking ingress with deny USER" )
           try {
             revokeSecurityGroupIngress( new RevokeSecurityGroupIngressRequest(
                 groupId: groupId,
@@ -404,7 +404,7 @@ class TestEC2VPCResourceConditionPolicy {
                     )
                 ]
             ) )
-            assertThat( false, "Expected revoke ingress failure for user without permission in vpc")
+            assertThat( false, "Expected revoke ingress failure for USER without permission in vpc")
           } catch( Exception e ) {
             print( "Expected failure for revoke ingress denied ${e}" )
           }
@@ -413,7 +413,7 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcPermCredentials ).with {
-          print( "Revoking egress with allow user" )
+          print( "Revoking egress with allow USER" )
           revokeSecurityGroupEgress( new RevokeSecurityGroupEgressRequest(
               groupId: groupId,
               ipPermissions: [
@@ -424,7 +424,7 @@ class TestEC2VPCResourceConditionPolicy {
               ]
           ) )
 
-          print( "Revoking ingress with allow user" )
+          print( "Revoking ingress with allow USER" )
           revokeSecurityGroupIngress( new RevokeSecurityGroupIngressRequest(
               groupId: groupId,
               ipPermissions: [
@@ -436,11 +436,11 @@ class TestEC2VPCResourceConditionPolicy {
           ) )
         }
 
-        print( "Deleting security group with deny user" )
+        print( "Deleting security group with deny USER" )
         getEC2Client( vpcDenyCredentials ).with {
           try {
             deleteSecurityGroup( new DeleteSecurityGroupRequest( groupId: groupId ) )
-            assertThat( false, "Expected delete failure for user without permission to delete security group resource in vpc")
+            assertThat( false, "Expected delete failure for USER without permission to delete security group resource in vpc")
           } catch( Exception e ) {
             print( "Expected failure for security group delete denied ${e}" )
           }
@@ -448,7 +448,7 @@ class TestEC2VPCResourceConditionPolicy {
           void
         }
 
-        print( "Deleting security group with allow user" )
+        print( "Deleting security group with allow USER" )
         getEC2Client( vpcPermCredentials ).with {
           deleteSecurityGroup( new DeleteSecurityGroupRequest( groupId: groupId ) )
         }
@@ -474,24 +474,24 @@ class TestEC2VPCResourceConditionPolicy {
         ) )
 
         getEC2Client( vpcDenyCredentials ).with {
-          print( "Deleting network acl entry with deny user" )
+          print( "Deleting network acl entry with deny USER" )
           try {
             deleteNetworkAclEntry( new DeleteNetworkAclEntryRequest(
                 networkAclId: networkAclId,
                 ruleNumber: 200,
                 egress: false
             ) )
-            assertThat( false, "Expected delete failure for user without permission to delete network acl entry resource in vpc")
+            assertThat( false, "Expected delete failure for USER without permission to delete network acl entry resource in vpc")
           } catch( Exception e ) {
             print( "Expected failure for network acl entry delete denied ${e}" )
           }
 
-          print( "Deleting network acl with deny user" )
+          print( "Deleting network acl with deny USER" )
           try {
             deleteNetworkAcl( new DeleteNetworkAclRequest(
                 networkAclId: networkAclId
             ) )
-            assertThat( false, "Expected delete failure for user without permission to delete network acl resource in vpc")
+            assertThat( false, "Expected delete failure for USER without permission to delete network acl resource in vpc")
           } catch( Exception e ) {
             print( "Expected failure for network acl delete denied ${e}" )
           }
@@ -500,14 +500,14 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcPermCredentials ).with {
-          print( "Deleting network acl entry with allow user" )
+          print( "Deleting network acl entry with allow USER" )
           deleteNetworkAclEntry( new DeleteNetworkAclEntryRequest(
               networkAclId: networkAclId,
               ruleNumber: 200,
               egress: false
           ) )
 
-          print( "Deleting network acl with allow user" )
+          print( "Deleting network acl with allow USER" )
           deleteNetworkAcl( new DeleteNetworkAclRequest(
               networkAclId: networkAclId
           ) )
@@ -533,23 +533,23 @@ class TestEC2VPCResourceConditionPolicy {
         ) )
 
         getEC2Client( vpcDenyCredentials ).with {
-          print( "Deleting route with deny user" )
+          print( "Deleting route with deny USER" )
           try {
             deleteRoute( new DeleteRouteRequest(
                 routeTableId: routeTableId,
                 destinationCidrBlock: '0.0.0.0/0',
             ) )
-            assertThat( false, "Expected delete failure for user without permission to delete route resource in vpc")
+            assertThat( false, "Expected delete failure for USER without permission to delete route resource in vpc")
           } catch( Exception e ) {
             print( "Expected failure for route delete denied ${e}" )
           }
 
-          print( "Deleting route table with deny user" )
+          print( "Deleting route table with deny USER" )
           try {
             deleteRouteTable( new DeleteRouteTableRequest(
                 routeTableId: routeTableId
             ) )
-            assertThat( false, "Expected delete failure for user without permission to delete route table resource in vpc")
+            assertThat( false, "Expected delete failure for USER without permission to delete route table resource in vpc")
           } catch( Exception e ) {
             print( "Expected failure for route table delete denied ${e}" )
           }
@@ -558,13 +558,13 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcPermCredentials ).with {
-          print( "Deleting route with allow user" )
+          print( "Deleting route with allow USER" )
           deleteRoute( new DeleteRouteRequest(
               routeTableId: routeTableId,
               destinationCidrBlock: '0.0.0.0/0',
           ) )
 
-          print( "Deleting route table with allow user" )
+          print( "Deleting route table with allow USER" )
           deleteRouteTable( new DeleteRouteTableRequest(
               routeTableId: routeTableId
           ) )
@@ -573,7 +573,7 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcDenyCredentials ).with {
-          print("Running instance with deny user")
+          print("Running instance with deny USER")
           try {
             String instanceId = runInstances(new RunInstancesRequest(
                 minCount: 1,
@@ -611,7 +611,7 @@ class TestEC2VPCResourceConditionPolicy {
                 }
               }
             }
-            assertThat( false, "Expected run instances failure for user without permission to run instance resources in subnet")
+            assertThat( false, "Expected run instances failure for USER without permission to run instance resources in subnet")
           } catch ( Exception e )  {
             print( "Expected failure for run instances denied ${e}" )
           }
@@ -620,7 +620,7 @@ class TestEC2VPCResourceConditionPolicy {
         }
 
         getEC2Client( vpcPermCredentials ).with {
-          print("Running instance with allow user")
+          print("Running instance with allow USER")
           String instanceId = runInstances(new RunInstancesRequest(
               minCount: 1,
               maxCount: 1,

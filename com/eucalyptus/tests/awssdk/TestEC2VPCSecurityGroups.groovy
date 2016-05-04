@@ -9,10 +9,10 @@ import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.*
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 
 /**
@@ -35,7 +35,7 @@ class TestEC2VPCSecurityGroups {
 
     public TestEC2VPCSecurityGroups() {
         minimalInit()
-        this.host=HOST_IP
+        this.host=CLC_IP
         this.credentials = new StaticCredentialsProvider(new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY))
     }
 
@@ -112,8 +112,8 @@ class TestEC2VPCSecurityGroups {
                             assertThat(userIdGroupPairs != null && userIdGroupPairs.size() == 1, "Expected one source group, but was: ${userIdGroupPairs?.size()}")
                             assertThat(ipRanges == null || ipRanges.isEmpty(), "Expected no ip ranges, but was: ${ipRanges?.size()}")
                             userIdGroupPairs[0].with {
-                                assertThat(expectedUserId == userId, "Expected user ${expectedUserId}, but was: ${userId}")
-                                assertThat(defaultSecurityGroupId == groupId, "Expected user ${defaultSecurityGroupId}, but was: ${groupId}")
+                                assertThat(expectedUserId == userId, "Expected USER ${expectedUserId}, but was: ${userId}")
+                                assertThat(defaultSecurityGroupId == groupId, "Expected USER ${defaultSecurityGroupId}, but was: ${groupId}")
                             }
                         }
                     }

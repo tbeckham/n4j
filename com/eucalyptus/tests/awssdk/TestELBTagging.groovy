@@ -14,7 +14,6 @@ import com.amazonaws.services.elasticloadbalancing.model.AddTagsRequest
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest
 import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerRequest
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersRequest
-import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult
 import com.amazonaws.services.elasticloadbalancing.model.DescribeTagsRequest
 import com.amazonaws.services.elasticloadbalancing.model.Listener
 import com.amazonaws.services.elasticloadbalancing.model.RemoveTagsRequest
@@ -23,10 +22,10 @@ import com.amazonaws.services.elasticloadbalancing.model.TagKeyOnly
 
 import org.testng.annotations.Test;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.HOST_IP
-import static com.eucalyptus.tests.awssdk.Eutester4j.SECRET_KEY
-import static com.eucalyptus.tests.awssdk.Eutester4j.minimalInit
+import static N4j.ACCESS_KEY
+import static N4j.CLC_IP
+import static N4j.SECRET_KEY
+import static N4j.minimalInit
 
 /**
  *
@@ -42,7 +41,7 @@ class TestELBTagging {
 
   public TestELBTagging( ) {
     minimalInit()
-    this.host = HOST_IP
+    this.host = CLC_IP
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
   }
 

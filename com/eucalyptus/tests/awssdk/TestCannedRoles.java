@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright 2009-2013 Eucalyptus Systems, Inc.
+ * Copyright 2009-2016 Eucalyptus Systems, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,8 +53,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.eucalyptus.tests.awssdk.Eutester4j.*;
-import static com.eucalyptus.tests.awssdk.Eutester4j.youAre;
+import static com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.youAre;
 
 /**
  * This test verifies the functionality of https://eucalyptus.atlassian.net/browse/EUCA-8156, EUCA-8157, and EUCA-8158
