@@ -90,7 +90,7 @@ class N4j {
         EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
         AS_ENDPOINT = getAttribute(CREDPATH, "autoscaling-url");
         ELB_ENDPOINT = getAttribute(CREDPATH, "elasticloadbalancing-url");
-        CW_ENDPOINT = getAttribute(CREDPATH, "cloudformation-url");
+        CW_ENDPOINT = getAttribute(CREDPATH, "monitoring-url");
         IAM_ENDPOINT = getAttribute(CREDPATH, "iam-url");
         S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
         TOKENS_ENDPOINT = getAttribute(CREDPATH, "sts-url");

@@ -243,7 +243,7 @@ class TestELBEC2Classic {
               imageId: imageId,
               keyName: keyName,
               securityGroupIds: [ instanceGroupId ],
-              userData: Base64.encodeAsString( userDataText.getBytes( StandardCharsets.UTF_8 ) )
+              userData: userDataText
           )).with {
             reservation?.with {
               instances?.getAt( 0 )?.instanceId
