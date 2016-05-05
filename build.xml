@@ -50,13 +50,12 @@
         <delete dir="${testng.output.dir}"/>
     </target>
 
-    <taskdef name="groovyc"
-             classname="org.codehaus.groovy.ant.Groovyc"
-             classpathref="classpath"/>
-
     <!-- compile all classes of src.dir -->
     <target name="compile" depends="download-deps">
         <mkdir dir="${classes.dir}"/>
+        <taskdef name="groovyc"
+                 classname="org.codehaus.groovy.ant.Groovyc"
+                 classpathref="classpath"/>
         <javac includeantruntime="false" srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
         <groovyc srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
         <copy file="log4j.properties" todir="${classes.dir}"/>
