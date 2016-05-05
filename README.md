@@ -17,7 +17,7 @@ Installation
 
 3. ant -Dclcip=your_cloudcontroller_ip -Duser=user_to_log_into_host_as -Dpassword=host_user_password
 
-(The default ant target will download all the dependencies required and run the test suite "AllTestsSuite.xml")
+(The default ant target will download all the dependencies required and run the test suite "DefaultSuite.xml")
 
 Development
 ------
