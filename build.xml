@@ -14,7 +14,7 @@
     <property name="user" value="root"/>
     <property name="password" value="foobar"/>
     <property name="endpoints" value="endpoints.xml"/>
-    <property name="tests" value="AllTestsSuite.xml"/>
+    <property name="tests" value="DefaultSuite.xml"/>
     <property name="ivy.cache.ttl.default" value="1d"/>
 
     <!-- bootstrap-ivy -->
