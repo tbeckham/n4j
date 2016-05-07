@@ -33,7 +33,6 @@ public class N4jTest {
         getCloudInfo();
     }
 
-
     /**
      * This test method ensures that we established connection to a cloud and have retrieved cloud admin credentials
      *

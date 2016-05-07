@@ -52,6 +52,7 @@ class N4j {
     static String endpointFile = System.getProperty("endpoints");
     static String CREDPATH = System.getProperty("inifile", "n4j-admin.ini");
     static String n4jCreds="/root/.euca/n4j-admin.ini";
+    static String setupScript="n4j-setupcreds.sh";
     static Logger logger = Logger.getLogger(N4j.class.getCanonicalName());
     static String EC2_ENDPOINT = null;
     static String AS_ENDPOINT = null;
@@ -205,7 +206,8 @@ class N4j {
 
     public static void getAdminCreds(String clcip, String user, String password) {
         print("CLC IP: " + clcip);
-        SftpATTRS attrs = null;
+        SftpATTRS credAttrs = null;
+        SftpATTRS scriptAttrs = null;
 
         try {
             JSch jsch = new JSch();
@@ -220,44 +222,46 @@ class N4j {
 
             // check to see if there are already creds created by us present
             try {
-                attrs = sftpChannel.stat(n4jCreds);
+                credAttrs = sftpChannel.stat(n4jCreds);
             } catch (Exception e){
                 print("No existing test creds found.");
             }
 
+            // check to see if our creds script is present
+            try {
+                scriptAttrs = sftpChannel.stat(setupScript);
+            } catch (Exception e){
+                print("No existing cred setup script found.");
+            }
+
+            // if our creds setup script is not there send it
+            if (scriptAttrs != null){
+                print("Existing creds setup script found");
+            } else {
+                putRemoteFile(CLC_IP,USER,PASSWORD,setupScript);
+            }
+
             // if there are not creds already created by us create them
-            if (attrs != null) {
+            if (credAttrs != null) {
                 print("Existing test creds found");
             } else {
                 print("Creating test creds: " + n4jCreds);
-                String command = "eval `clcadmin-assume-system-credentials`\n" +
-                        "    DNSDOMAIN=$(euctl | grep dnsdomain | awk '{print $3}')\n" +
-                        "    euare-useraddkey admin -wd $DNSDOMAIN > /root/.euca/n4j-admin.ini\n" +
-                        "    ACCOUNTID=$(grep account-id /root/.euca/n4j-admin.ini | awk '{print $3}')\n" +
-                        "    grep \"USER = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
-                        "    if [ $? -ne 0 ]; then\n" +
-                        "      sed -i \"/\\\\[region/auser = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
-                        "      echo \"[global]\" >> /root/.euca/n4j-admin.ini; echo \"default-region = $DNSDOMAIN\" >> /root/.euca/n4j-admin.ini\n" +
-                        "    fi";
-                Channel channel=session.openChannel("exec");
-                ((ChannelExec)channel).setCommand(command);
-                channel.connect();
-                InputStream in=channel.getInputStream();
-                byte[] tmp=new byte[1024];
-                while(true){
-                    while(in.available()>0){
-                        int i=in.read(tmp, 0, 1024);
-                        if(i<0)break;
-                        print(new String(tmp, 0, i));
-                    }
-                    if(channel.isClosed()){
-                        if(in.available()>0) continue;
-                        print("Get creds exit-status: "+channel.getExitStatus());
-                        break;
-                    }
-                    try{Thread.sleep(1000);}catch(Exception ee){}
+                String command = "bash " + setupScript;
+                ChannelExec channelExec= (ChannelExec)session.openChannel("exec");
+                channelExec.setCommand(command);
+                channelExec.connect();
+                InputStream in=channelExec.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                String line;
+                while ((line = reader.readLine()) != null)
+                {
+                    print(line);
                 }
-                channel.disconnect();
+
+                //retrieve the exit status of the remote command corresponding to this channel
+                int exitStatus = channelExec.getExitStatus();
+                print("Exit status: "+exitStatus);
+                channelExec.disconnect();
             }
             session.disconnect();
         }
@@ -270,14 +274,16 @@ class N4j {
     }
 
     public static void getRemoteFile(String clcip, String user, String password, String remoteFile, String localFile) {
+        Session session = null;
+        ChannelSftp sftpChannel = null;
         try
         {
             JSch jsch = new JSch();
-            Session session = jsch.getSession(user, clcip, 22);
+            session = jsch.getSession(user, clcip, 22);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect();
-            ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
+            sftpChannel = (ChannelSftp) session.openChannel("sftp");
             sftpChannel.connect();
             InputStream out;
             out = sftpChannel.get(remoteFile);
@@ -292,12 +298,47 @@ class N4j {
             }
             reader.close();
             writer.close();
-            sftpChannel.disconnect();
+        } catch(JSchException | SftpException | IOException e) {
+            System.out.print(e);
+        } finally {
+            sftpChannel.exit();
             session.disconnect();
         }
-        catch(JSchException | SftpException | IOException e)
-        {
-            System.out.print(e);
+    }
+
+    public static void putRemoteFile(String clcip, String user, String password, String fileName){
+        String SFTPWORKINGDIR = "/root/";
+        Session session = null;
+        Channel channel = null;
+        ChannelSftp channelSftp = null;
+        print("preparing the host information for sftp.");
+        try {
+            JSch jsch = new JSch();
+            session = jsch.getSession(user, clcip, 22);
+            session.setPassword(password);
+            java.util.Properties config = new java.util.Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
+            session.connect();
+            print("Host connected.");
+            channel = session.openChannel("sftp");
+            channel.connect();
+            print("sftp channel opened and connected.");
+            channelSftp = (ChannelSftp) channel;
+            channelSftp.cd(SFTPWORKINGDIR);
+            File f = new File(fileName);
+            channelSftp.put(new FileInputStream(f), f.getName());
+            print("File transferred successfully to host.");
+        } catch (Exception ex) {
+            System.out.println("Exception found while tranfer the response.");
+        }
+        finally{
+            channelSftp.exit();
+            print("sftp Channel exited.");
+            channel.disconnect();
+            print("Channel disconnected.");
+            session.disconnect();
+            print("Host Session disconnected.");
         }
     }
 
@@ -1247,6 +1288,7 @@ class N4j {
         youAre.deleteAccessKey(new DeleteAccessKeyRequest("admin", ACCESS_KEY));
         print("Deleting remote file " + n4jCreds + " from the CLC");
         removeRemoteFile(CLC_IP, USER, PASSWORD, n4jCreds);
+        removeRemoteFile(CLC_IP, USER, PASSWORD, setupScript);
     }
 
     @SafeVarargs
