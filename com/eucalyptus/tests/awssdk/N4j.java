@@ -235,7 +235,6 @@ class N4j {
             } else {
                 print("Creating test creds: " + REMOTE_INI_FILE);
                 String command = "eval `clcadmin-assume-system-credentials`; " +
-                        "euctl authentication.access_keys_limit=1000;" +
                         "DNSDOMAIN=`euctl -n system.dns.dnsdomain`; " +
                         "euare-useraddkey admin -wd $DNSDOMAIN &> " + REMOTE_INI_FILE + ";" +
                         "echo [global] >> " + REMOTE_INI_FILE + ";" +
