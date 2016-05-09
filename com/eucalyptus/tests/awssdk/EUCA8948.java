@@ -52,14 +52,14 @@ public class EUCA8948 {
 		try {
 			account = this.getClass().getSimpleName().toLowerCase();
 
-			print("Getting cloud information from " + N4j.CREDPATH);
+			print("Getting cloud information from " + N4j.LOCAL_INI_FILE);
 
-			N4j.IAM_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "iam-url");
-			N4j.TOKENS_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "sts-url");
-			N4j.S3_ENDPOINT = N4j.getAttribute(N4j.CREDPATH, "s3-url");
+			N4j.IAM_ENDPOINT = N4j.getAttribute(N4j.LOCAL_INI_FILE, "iam-url");
+			N4j.TOKENS_ENDPOINT = N4j.getAttribute(N4j.LOCAL_INI_FILE, "sts-url");
+			N4j.S3_ENDPOINT = N4j.getAttribute(N4j.LOCAL_INI_FILE, "s3-url");
 
-			N4j.ACCESS_KEY = N4j.getAttribute(N4j.CREDPATH, "key-id");
-			N4j.SECRET_KEY = N4j.getAttribute(N4j.CREDPATH, "secret-key");
+			N4j.ACCESS_KEY = N4j.getAttribute(N4j.LOCAL_INI_FILE, "key-id");
+			N4j.SECRET_KEY = N4j.getAttribute(N4j.LOCAL_INI_FILE, "secret-key");
 
 			N4j.youAre = N4j.getYouAreClient(N4j.ACCESS_KEY, N4j.SECRET_KEY, N4j.IAM_ENDPOINT);
 

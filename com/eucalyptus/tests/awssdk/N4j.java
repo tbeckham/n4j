@@ -50,8 +50,8 @@ class N4j {
     static String USER = System.getProperty("user");
     static String PASSWORD = System.getProperty("password");
     static String endpointFile = System.getProperty("endpoints");
-    static String CREDPATH = System.getProperty("inifile", "n4j-admin.ini");
-    static String n4jCreds="/root/.euca/n4j-admin.ini";
+    static String LOCAL_INI_FILE = System.getProperty("inifile", "euca-admin.ini");
+    static String REMOTE_INI_FILE ="/root/.euca/euca-admin.ini";
     static Logger logger = Logger.getLogger(N4j.class.getCanonicalName());
     static String EC2_ENDPOINT = null;
     static String AS_ENDPOINT = null;
@@ -86,17 +86,17 @@ class N4j {
             endpoints = "endpoints.xml";
         }
 
-        print("Getting cloud information from " + CREDPATH);
-        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
-        AS_ENDPOINT = getAttribute(CREDPATH, "autoscaling-url");
-        ELB_ENDPOINT = getAttribute(CREDPATH, "elasticloadbalancing-url");
-        CW_ENDPOINT = getAttribute(CREDPATH, "monitoring-url");
-        IAM_ENDPOINT = getAttribute(CREDPATH, "iam-url");
-        S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
-        TOKENS_ENDPOINT = getAttribute(CREDPATH, "sts-url");
-        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
-        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
-        ACCOUNT_ID = getAttribute(CREDPATH,"account-id");
+        print("Getting cloud information from " + LOCAL_INI_FILE);
+        EC2_ENDPOINT = getAttribute(LOCAL_INI_FILE, "ec2-url");
+        AS_ENDPOINT = getAttribute(LOCAL_INI_FILE, "autoscaling-url");
+        ELB_ENDPOINT = getAttribute(LOCAL_INI_FILE, "elasticloadbalancing-url");
+        CW_ENDPOINT = getAttribute(LOCAL_INI_FILE, "monitoring-url");
+        IAM_ENDPOINT = getAttribute(LOCAL_INI_FILE, "iam-url");
+        S3_ENDPOINT = getAttribute(LOCAL_INI_FILE, "s3-url");
+        TOKENS_ENDPOINT = getAttribute(LOCAL_INI_FILE, "sts-url");
+        SECRET_KEY = getAttribute(LOCAL_INI_FILE, "secret-key");
+        ACCESS_KEY = getAttribute(LOCAL_INI_FILE, "key-id");
+        ACCOUNT_ID = getAttribute(LOCAL_INI_FILE,"account-id");
 
         print("Updating endpoints file");
         updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -131,13 +131,13 @@ class N4j {
             endpoints = "endpoints.xml";
         }
 
-        print("Getting cloud information from " + CREDPATH);
+        print("Getting cloud information from " + LOCAL_INI_FILE);
 
-        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
-        S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
+        EC2_ENDPOINT = getAttribute(LOCAL_INI_FILE, "ec2-url");
+        S3_ENDPOINT = getAttribute(LOCAL_INI_FILE, "s3-url");
 
-        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
-        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
+        SECRET_KEY = getAttribute(LOCAL_INI_FILE, "secret-key");
+        ACCESS_KEY = getAttribute(LOCAL_INI_FILE, "key-id");
 
         print("Updating endpoints file");
         updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -159,14 +159,14 @@ class N4j {
 				endpoints = "endpoints.xml";
 			}
 
-			print("Getting cloud information from " + CREDPATH);
+			print("Getting cloud information from " + LOCAL_INI_FILE);
 
-			EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
-			S3_ENDPOINT = getAttribute(CREDPATH, "s3-url");
-			IAM_ENDPOINT = getAttribute(CREDPATH, "iam-url");
+			EC2_ENDPOINT = getAttribute(LOCAL_INI_FILE, "ec2-url");
+			S3_ENDPOINT = getAttribute(LOCAL_INI_FILE, "s3-url");
+			IAM_ENDPOINT = getAttribute(LOCAL_INI_FILE, "iam-url");
 
-            SECRET_KEY = getAttribute(CREDPATH, "secret-key");
-            ACCESS_KEY = getAttribute(CREDPATH, "key-id");
+            SECRET_KEY = getAttribute(LOCAL_INI_FILE, "secret-key");
+            ACCESS_KEY = getAttribute(LOCAL_INI_FILE, "key-id");
 
 			print("Updating endpoints file");
 			updateEndpoints(endpoints, EC2_ENDPOINT, S3_ENDPOINT);
@@ -191,10 +191,10 @@ class N4j {
 
     public static void minimalInit() throws Exception {
         getAdminCreds(CLC_IP, USER, PASSWORD);
-        EC2_ENDPOINT = getAttribute(CREDPATH, "ec2-url");
+        EC2_ENDPOINT = getAttribute(LOCAL_INI_FILE, "ec2-url");
         print("HOST = " + CLC_IP);
-        SECRET_KEY = getAttribute(CREDPATH, "secret-key");
-        ACCESS_KEY = getAttribute(CREDPATH, "key-id");
+        SECRET_KEY = getAttribute(LOCAL_INI_FILE, "secret-key");
+        ACCESS_KEY = getAttribute(LOCAL_INI_FILE, "key-id");
         print("Cloud Discovery Complete");
     }
     
@@ -203,6 +203,10 @@ class N4j {
         print("*****TEST NAME: " + testName);
     }
 
+    /*
+    Here take the ini param and look for that file. if it is there get it
+    If it is not there then we will try to create creds
+     */
     public static void getAdminCreds(String clcip, String user, String password) {
         print("CLC IP: " + clcip);
         SftpATTRS attrs = null;
@@ -220,7 +224,7 @@ class N4j {
 
             // check to see if there are already creds created by us present
             try {
-                attrs = sftpChannel.stat(n4jCreds);
+                attrs = sftpChannel.stat(REMOTE_INI_FILE);
             } catch (Exception e){
                 print("No existing test creds found.");
             }
@@ -229,16 +233,12 @@ class N4j {
             if (attrs != null) {
                 print("Existing test creds found");
             } else {
-                print("Creating test creds: " + n4jCreds);
-                String command = "eval `clcadmin-assume-system-credentials`\n" +
-                        "    DNSDOMAIN=$(euctl | grep dnsdomain | awk '{print $3}')\n" +
-                        "    euare-useraddkey admin -wd $DNSDOMAIN > /root/.euca/n4j-admin.ini\n" +
-                        "    ACCOUNTID=$(grep account-id /root/.euca/n4j-admin.ini | awk '{print $3}')\n" +
-                        "    grep \"USER = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
-                        "    if [ $? -ne 0 ]; then\n" +
-                        "      sed -i \"/\\\\[region/auser = $ACCOUNTID:admin\" /root/.euca/n4j-admin.ini\n" +
-                        "      echo \"[global]\" >> /root/.euca/n4j-admin.ini; echo \"default-region = $DNSDOMAIN\" >> /root/.euca/n4j-admin.ini\n" +
-                        "    fi";
+                print("Creating test creds: " + REMOTE_INI_FILE);
+                String command = "eval `clcadmin-assume-system-credentials`; " +
+                        "DNSDOMAIN=`euctl -n system.dns.dnsdomain`; " +
+                        "euare-useraddkey admin -wd $DNSDOMAIN &> " + REMOTE_INI_FILE + ";" +
+                        "echo [global] >> " + REMOTE_INI_FILE + ";" +
+                        "echo default-region = $DNSDOMAIN >>  " + REMOTE_INI_FILE;
                 Channel channel=session.openChannel("exec");
                 ((ChannelExec)channel).setCommand(command);
                 channel.connect();
@@ -265,8 +265,8 @@ class N4j {
             System.err.print(e);
         }
         // we have known creds exist or we have created them by now so save them locally for processing
-        print("Fetching n4j-admin.ini file");
-        getRemoteFile(clcip, user, password, n4jCreds, "n4j-admin.ini");
+        print("Fetching euca-admin.ini file");
+        getRemoteFile(clcip, user, password, REMOTE_INI_FILE, "euca-admin.ini");
     }
 
     public static void getRemoteFile(String clcip, String user, String password, String remoteFile, String localFile) {
@@ -1242,11 +1242,11 @@ class N4j {
         return keys;
     }
 
-    public static void deleteTestCreds() {
-        print("Deleting accesskey " + ACCESS_KEY);
-        youAre.deleteAccessKey(new DeleteAccessKeyRequest("admin", ACCESS_KEY));
-        print("Deleting remote file " + n4jCreds + " from the CLC");
-        removeRemoteFile(CLC_IP, USER, PASSWORD, n4jCreds);
+    public static void deleteTestCreds(String accesskey, String remoteIniFile) {
+        print("Deleting accesskey " + accesskey);
+        youAre.deleteAccessKey(new DeleteAccessKeyRequest("admin", accesskey));
+        print("Deleting remote file " + remoteIniFile + " from the CLC");
+        removeRemoteFile(CLC_IP, USER, PASSWORD, remoteIniFile);
     }
 
     @SafeVarargs
