@@ -31,8 +31,8 @@ public class N4jTest {
     public void setUpBeforeClass() throws Exception {
         testInfo(this.getClass().getSimpleName());
         getCloudInfo();
+        // create a user
     }
-
 
     /**
      * This test method ensures that we established connection to a cloud and have retrieved cloud admin credentials
@@ -53,6 +53,6 @@ public class N4jTest {
      */
     @AfterClass
     public void tearDownAfterClass() throws Exception {
-        deleteTestCreds();
+        // delete any user that was creted
     }
 }
