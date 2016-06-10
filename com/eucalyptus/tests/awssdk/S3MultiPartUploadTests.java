@@ -967,9 +967,14 @@ public class S3MultiPartUploadTests {
         }
       });
 
-      assertTrue("Expected copied object etag to be " + completeMpuResult.getETag() + " but got " + copyResult.getETag(), completeMpuResult.getETag()
-          .equals(copyResult.getETag()));
-
+      /*
+      EUCA-12437
+      The check for etag equality in copy object can fail depending on the backend (AWS and RIAK give copied objects new etags, ceph keeps same etag)
+      For now this check will not be executed.
+       */
+//      assertTrue("Expected copied object size to be " + completeMpuResult.getETag()+ " but got " + copyResult.getETag(), completeMpuResult.getETag()
+//          .equals(copyResult.getETag()));
+      
       // Get the objects to verify
       final File originalFile = new File(eucaUUID());
       print(account + ": Downloading original object " + key + " to file " + originalFile.getName());
