@@ -321,7 +321,12 @@ public class S3MultiPartUploadTests {
           }
         });
       } catch (Exception e) {
-        s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucketName, key, initResp.getUploadId()));
+        /**
+         * 'abortMultipartUpload' throws InternalError for ceph-radosgw backend,
+         * if there isn't any part uploaded successfully.
+         * https://eucalyptus.atlassian.net/browse/EUCA-12446
+         **/
+        // s3.abortMultipartUpload(new AbortMultipartUploadRequest(bucketName, key, initResp.getUploadId()));
         if (e instanceof AmazonServiceException) {
           assertThat(true, "expected an exception to be thrown because a bad upload ID was specified");
           print("an exception was received with message - " + e.getMessage());
