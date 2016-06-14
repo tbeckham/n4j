@@ -361,14 +361,14 @@ public class S3MultiPartUploadTests {
           + initiateMpuResult.getUploadId() + ", part number 1");
       UploadPartResult uploadPartResult =
           s3.uploadPart(new UploadPartRequest().withBucketName(bucketName).withKey(key).withUploadId(initiateMpuResult.getUploadId())
-              .withPartNumber(1).withFile(smallFile));
+              .withPartNumber(1).withFile(smallFile).withPartSize( smallFile.length() ));
       partETags.add(uploadPartResult.getPartETag());
 
       print(account + ": Uploading file of size " + smallFile.length() + " bytes for object " + key + ", upload ID "
           + initiateMpuResult.getUploadId() + ", part number 2");
       uploadPartResult =
           s3.uploadPart(new UploadPartRequest().withBucketName(bucketName).withKey(key).withUploadId(initiateMpuResult.getUploadId())
-              .withPartNumber(2).withFile(smallFile));
+              .withPartNumber(2).withFile(smallFile).withPartSize( smallFile.length() ));
       partETags.add(uploadPartResult.getPartETag());
 
       boolean error = false;
