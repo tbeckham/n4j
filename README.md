@@ -7,7 +7,7 @@ Prerequisites
 
 2. apache ant
 
-3. access to a cloud
+3. access to a cloud that has at least 1 public image available
 
 Installation
 ------
