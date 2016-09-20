@@ -29,6 +29,7 @@ import org.testng.annotations.Test
  *   https://eucalyptus.atlassian.net/browse/EUCA-12567
  *   https://eucalyptus.atlassian.net/browse/EUCA-12568
  *   https://eucalyptus.atlassian.net/browse/EUCA-12574
+ *   https://eucalyptus.atlassian.net/browse/EUCA-12739
  *
  * Related AWS doc:
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
@@ -140,6 +141,13 @@ class TestIAMOpenIDConnectProviders {
           }
         }
 
+        N4j.print "Getting account summary to check existing provider count"
+        final Integer providers = getAccountSummary( ).with {
+          summaryMap.get( "Providers" )
+        }
+        N4j.assertThat( providers != null, "Expected provider count in account summary" )
+        N4j.print "Found provider count ${providers}"
+
         N4j.print "Creating provider : ${validParameters}"
         final String providerArn = createOpenIDConnectProvider( new CreateOpenIDConnectProviderRequest( validParameters ) )?.with {
           it.openIDConnectProviderArn
@@ -149,6 +157,14 @@ class TestIAMOpenIDConnectProviders {
         assertThat( providerArn.startsWith( 'arn:aws:iam:' ), "Expected provider arn to match iam service" )
         assertThat( providerArn.contains( ':oidc-provider/' ), "Expected provider arn to contain resource type" )
         assertThat( providerArn.endsWith( validParameters.url.substring( 7 ) ), "Expected provider arn to end with host/path" )
+
+        N4j.print "Getting account summary to check existing provider count"
+        getAccountSummary( ).with {
+          Integer providersInc = summaryMap.get( "Providers" )
+          N4j.assertThat( providersInc != null, "Expected provider count in account summary" )
+          N4j.assertThat( (providers+1) == providersInc, "Expected provider count ${providers+1}, but was: ${providersInc}" )
+          N4j.print "Found provider count ${providersInc}"
+        }
 
         N4j.print "Deleting provider : ${providerArn}"
         deleteOpenIDConnectProvider( new DeleteOpenIDConnectProviderRequest(
@@ -300,7 +316,7 @@ class TestIAMOpenIDConnectProviders {
             clientID: 'a'
         ) )
 
-        N4j.print( "Removing unkown client id 'c' for provider: ${pathProviderArn}" )
+        N4j.print( "Removing unknown client id 'c' for provider: ${pathProviderArn}" )
         removeClientIDFromOpenIDConnectProvider( new RemoveClientIDFromOpenIDConnectProviderRequest(
             openIDConnectProviderArn: pathProviderArn,
             clientID: 'c'
