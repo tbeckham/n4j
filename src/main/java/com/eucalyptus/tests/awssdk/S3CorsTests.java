@@ -208,7 +208,9 @@ public class S3CorsTests {
 
       // Find the only rule with an ID, and check its fields
 
+      int ruleSequence = 0;
       for (CORSRule corsRuleRetrieved : corsRuleListRetrieved ) {
+          ruleSequence++;
 
           assertTrue("Received a null CORS rule in the retrieved CORS configuration",
                      corsRuleListRetrieved != null);
@@ -216,6 +218,10 @@ public class S3CorsTests {
           String ruleIdReceived = corsRuleRetrieved.getId();
           if (ruleIdReceived != null &&
               ruleIdReceived.equals("ManuallyAssignedId1")) {
+
+              // It should be the 3rd CORS rule
+              assertTrue("Rule found is out of sequence, should be 3, is: " + ruleSequence,
+                         ruleSequence == 3);
 
               List<String> originsReceived = corsRuleRetrieved.getAllowedOrigins();
               assertTrue("Allowed Origin is unexpected: " + originsReceived, 
