@@ -34,6 +34,8 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.github.sjones4.youcan.youare.YouAreClient;
 import org.testng.annotations.Test;
 
@@ -44,15 +46,21 @@ import java.util.List;
 import static com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
- * This application tests assuming an IAM role using STS and consuming EC2 with the role.
+ * This test covers:
+ *
+ * <ul>
+ *   <li>assuming an IAM role using STS</li>
+ *   <li>consuming EC2 using the role</li>
+ *   <li>getting caller identity from STS for users and roles</li>
+ * </ul>
+ *
  * <p/>
- * This is verification for the story:
+ * This is verification for the stories:
  * <p/>
- * https://eucalyptus.atlassian.net/browse/EUCA-5250
- * <p/>
- * Prerequisites:
- * <p/>
- * - This test must be run as a user outside the cloud administrator account.
+ * <ul>
+ * <li>https://eucalyptus.atlassian.net/browse/EUCA-5250</li>
+ * <li>https://eucalyptus.atlassian.net/browse/EUCA-12318</li>
+ * </ul>
  */
 public class TestSTSAssumeRole {
 
@@ -90,7 +98,9 @@ public class TestSTSAssumeRole {
             assertThat(userResult.getUser() != null, "Expected current user info");
             assertThat(userResult.getUser().getArn() != null, "Expected current user ARN");
             final String userArn = userResult.getUser().getArn();
+            final String userId = userResult.getUser().getUserId();
             print("Got user ARN (will convert account alias to ID if necessary): " + userArn);
+            print("Got user id: " + userId);
             {
                 final String roleNameA = NAME_PREFIX + "AssumeRoleTestA";
                 print("Creating role to determine account number: " + roleNameA);
@@ -165,6 +175,9 @@ public class TestSTSAssumeRole {
             assertThat(result.getRole() != null, "Expected role");
             assertThat(result.getRole().getArn() != null, "Expected role ARN");
             final String roleArn = result.getRole().getArn();
+            final String roleId = result.getRole().getRoleId();
+            print("Got role arn : " + roleArn);
+            print("Got role id  : " + roleId);
 
             /* Describe images using role with no permissions
              * In 3.X this would just return nothing
@@ -220,6 +233,36 @@ public class TestSTSAssumeRole {
                 print("Received expected exception: " + e);
             }
 
+
+            // Get caller identity using user credentials
+            {
+                print("Testing get caller identity for user credentials");
+                final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient( awsCredentialsProvider );
+                sts.setEndpoint(TOKENS_ENDPOINT);
+                final GetCallerIdentityResult identityResult = sts.getCallerIdentity( new GetCallerIdentityRequest( ) );
+                assertThat( accountId.equals( identityResult.getAccount( ) ), "Unexpected account for user caller identity : " + identityResult.getAccount( ) );
+                assertThat( userArn.equals( identityResult.getArn( ) ), "Unexpected arn for user caller identity : " + identityResult.getArn( ) );
+                assertThat( userId.equals( identityResult.getUserId( ) ), "Unexpected userid for user caller identity : " + identityResult.getUserId( ) );
+            }
+
+
+            // Get caller identity using role credentials
+            {
+                print("Testing get caller identity for role credentials");
+                final String roleSessionName = "this-is-the-session-name";
+                final String assumedRoleArn = "arn:aws:sts::"+accountId+":assumed-role/" + roleSessionName;
+                final String assumedRoleId = roleId + ":" + roleSessionName;
+                print("Expected assumed role arn : " + assumedRoleArn );
+                print("Expected assumed role id  : " + assumedRoleId );
+                final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient(
+                    getCredentialsProviderForRole( awsCredentialsProvider, roleArn, "222222222222", roleSessionName ) );
+                sts.setEndpoint(TOKENS_ENDPOINT);
+                final GetCallerIdentityResult identityResult = sts.getCallerIdentity( new GetCallerIdentityRequest( ) );
+                assertThat( accountId.equals( identityResult.getAccount( ) ), "Unexpected account for role caller identity : " + identityResult.getAccount( ) );
+                assertThat( assumedRoleArn.equals( identityResult.getArn( ) ), "Unexpected arn for role caller identity : " + identityResult.getArn( ) );
+                assertThat( assumedRoleId.equals( identityResult.getUserId( ) ), "Unexpected userid for role caller identity : " + identityResult.getUserId( ) );
+            }
+
             print("Test complete");
         } finally {
             // Attempt to clean up anything we created
@@ -236,37 +279,56 @@ public class TestSTSAssumeRole {
         }
     }
 
+    private AWSCredentialsProvider getCredentialsProviderForRole( final AWSCredentials creds,
+                                                                  final String roleArn,
+                                                                  final String externalId,
+                                                                  final String sessionName ) {
+        return getCredentialsProviderForRole( new StaticCredentialsProvider( creds ), roleArn, externalId, sessionName );
+    }
+
+    private AWSCredentialsProvider getCredentialsProviderForRole( final AWSCredentialsProvider creds,
+                                                                  final String roleArn,
+                                                                  final String externalId,
+                                                                  final String sessionName ) {
+        return new AWSCredentialsProvider() {
+            private AWSCredentials awsCredentials = null;
+
+            @Override
+            public AWSCredentials getCredentials() {
+                if ( awsCredentials == null ) {
+                    final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient(creds);
+                    sts.setEndpoint(TOKENS_ENDPOINT);
+                    final AssumeRoleResult assumeRoleResult = sts.assumeRole(new AssumeRoleRequest()
+                        .withRoleArn(roleArn)
+                        .withExternalId(externalId)
+                        .withRoleSessionName(sessionName)
+                    );
+
+                    assertThat(assumeRoleResult.getAssumedRoleUser().getAssumedRoleId().endsWith(sessionName), "Unexpected assumed role id: " + assumeRoleResult.getAssumedRoleUser().getAssumedRoleId());
+                    assertThat(assumeRoleResult.getAssumedRoleUser().getArn().endsWith(sessionName), "Unexpected assumed role arn: " + assumeRoleResult.getAssumedRoleUser().getArn());
+
+                    awsCredentials = new BasicSessionCredentials(
+                        assumeRoleResult.getCredentials().getAccessKeyId(),
+                        assumeRoleResult.getCredentials().getSecretAccessKey(),
+                        assumeRoleResult.getCredentials().getSessionToken()
+                    );
+                }
+                return awsCredentials;
+            }
+
+            @Override
+            public void refresh( ) {
+                awsCredentials = null;
+            }
+        };
+    }
+
     private AmazonEC2 getEc2ClientUsingRole(final String account,
                                             final String user,
                                             final String roleArn,
                                             final String externalId,
                                             final String sessionName) {
-        final AmazonEC2 ec2 = new AmazonEC2Client(new AWSCredentialsProvider() {
-            @Override
-            public AWSCredentials getCredentials() {
-                AWSCredentials creds = getUserCreds(account,user);
-                final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient(creds);
-                sts.setEndpoint(TOKENS_ENDPOINT);
-                final AssumeRoleResult assumeRoleResult = sts.assumeRole(new AssumeRoleRequest()
-                        .withRoleArn(roleArn)
-                        .withExternalId(externalId)
-                        .withRoleSessionName(sessionName)
-                );
-
-                assertThat(assumeRoleResult.getAssumedRoleUser().getAssumedRoleId().endsWith(sessionName), "Unexpected assumed role id: " + assumeRoleResult.getAssumedRoleUser().getAssumedRoleId());
-                assertThat(assumeRoleResult.getAssumedRoleUser().getArn().endsWith(sessionName), "Unexpected assumed role arn: " + assumeRoleResult.getAssumedRoleUser().getArn());
-
-                return new BasicSessionCredentials(
-                        assumeRoleResult.getCredentials().getAccessKeyId(),
-                        assumeRoleResult.getCredentials().getSecretAccessKey(),
-                        assumeRoleResult.getCredentials().getSessionToken()
-                );
-            }
-
-            @Override
-            public void refresh() {
-            }
-        });
+        final AmazonEC2 ec2 = new AmazonEC2Client( getCredentialsProviderForRole( getUserCreds(account,user), roleArn, externalId, sessionName ) );
         ec2.setEndpoint(EC2_ENDPOINT);
         return ec2;
     }
