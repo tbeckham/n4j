@@ -12,6 +12,9 @@ import com.amazonaws.regions.Region
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.AmazonEC2Client
+import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest
+import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest
+import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient
 import com.amazonaws.services.identitymanagement.model.CreateOpenIDConnectProviderRequest
@@ -56,21 +59,23 @@ import java.security.spec.RSAPrivateKeySpec
  * Related issues:
  *   https://eucalyptus.atlassian.net/browse/EUCA-12564
  *   https://eucalyptus.atlassian.net/browse/EUCA-12566
+ *   https://eucalyptus.atlassian.net/browse/EUCA-12717
  *
  * Related AWS doc:
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html
+ *   http://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html#condition-keys-wif
  */
 class TestSTSAssumeRoleWithWebIdentity {
 
   // use host setting to switch between aws and qa, TODO:update all CHANGEME before testing
   private static final String host = '10.X.Y.Z'            // TODO:CHANGEME ufs host ip
   private static final AWSCredentialsProvider credentials = new StaticCredentialsProvider( new BasicAWSCredentials(
-      "AKI...",
-      "..."  ) ) // TODO:CHANGEME creds for s3/iam use
+      'AKI...',
+      ''  ) ) // TODO:CHANGEME creds for s3/iam use
   private static final AWSCredentialsProvider adminCredentials = new StaticCredentialsProvider( new BasicAWSCredentials(
-      "AKIA...",
-      "..."  ) ) // TODO:CHANGEME creds for properties
+      'AKI...',
+      ''  ) ) // TODO:CHANGEME creds for properties
 
   // configurable / detected values
   private final Region region = Region.getRegion(Regions.US_WEST_1)
@@ -88,6 +93,8 @@ class TestSTSAssumeRoleWithWebIdentity {
   // arbitrary values for oidc registration / identity
   private final String aud = 'c6845610-9b57-4386-a1c4-7ffe45d03c92'
   private final String sub = '7277dd17-cc4e-4b24-8830-ccdafca56241'
+  private final String altAud = '08493485-7ad5-4f3a-8de3-bc746d9c5c5b'
+  private final String altSub = 'f64a0a9b-57af-4b2b-9967-1e0a8b51a40d'
   private final String kid = 'edec04463e2049969f3bf45bf17bb1f3'
 
   // oidc provider private key
@@ -165,13 +172,13 @@ class TestSTSAssumeRoleWithWebIdentity {
   }
 
   private AmazonIdentityManagement getIamClient(final AWSCredentialsProvider credentials) {
-    final AmazonIdentityManagement iam = new AmazonIdentityManagementClient(credentials);
+    final AmazonIdentityManagement iam = new AmazonIdentityManagementClient(credentials)
     if (host) { // qa
       iam.setEndpoint(cloudUri('/services/Euare'))
     } else { // aws
       // no region for iam
     }
-    return iam;
+    iam
   }
 
   private AmazonEC2 getEC2Client(final AWSCredentialsProvider credentials) {
@@ -234,7 +241,10 @@ class TestSTSAssumeRoleWithWebIdentity {
   }
 
   @Test
-  public void test() throws Exception {
+  public void test( ) throws Exception {
+    final String namePrefix = UUID.randomUUID().toString() + "-"
+    N4j.print( "Using resource prefix for test: ${namePrefix}" )
+
     final List<Runnable> cleanupTasks = [] as List<Runnable>
     try {
       // By default we cannot use s3 for OIDC provider discovery as the host
@@ -351,7 +361,7 @@ class TestSTSAssumeRoleWithWebIdentity {
         ).withCannedAcl(CannedAccessControlList.PublicRead))
         cleanupTasks.add {
           N4j.print "Deleting ${jwksObject} object from ${bucket}"
-          deleteObject(bucket, jwksObject);
+          deleteObject(bucket, jwksObject)
         }
         N4j.print "Creating object for oidc configuration: .well-known/openid-configuration"
         String oidcConfigurationObject = "${path.empty ? '' : path.substring(1) + '/'}.well-known/openid-configuration"
@@ -365,7 +375,7 @@ class TestSTSAssumeRoleWithWebIdentity {
         ).withCannedAcl(CannedAccessControlList.PublicRead))
         cleanupTasks.add {
           N4j.print "Deleting ${oidcConfigurationObject} object from ${bucket}"
-          deleteObject(bucket, oidcConfigurationObject);
+          deleteObject(bucket, oidcConfigurationObject)
         }
         N4j.print "Bucket created for oidc discovery info: ${bucket}"
       }
@@ -378,7 +388,7 @@ class TestSTSAssumeRoleWithWebIdentity {
         providerArn = createOpenIDConnectProvider(new CreateOpenIDConnectProviderRequest(
             url: "https://${bucket}.${domainAndPort}${path}",
             clientIDList: [
-                aud
+                aud, altAud
             ],
             thumbprintList: [
                 thumbprint
@@ -412,8 +422,8 @@ class TestSTSAssumeRoleWithWebIdentity {
                 "Action": "sts:AssumeRoleWithWebIdentity",
                 "Condition": {
                   "StringEquals": {
-                    "${bucket}.${domain}${path}:aud": "${aud}",
-                    "${bucket}.${domain}${path}:sub": "${sub}"
+                    "${bucket}.${domain}${path}:aud": [ "${aud}", "${altAud}" ],
+                    "${bucket}.${domain}${path}:sub": [ "${sub}", "${altSub}" ]
                   }
                 }
               }
@@ -427,32 +437,19 @@ class TestSTSAssumeRoleWithWebIdentity {
             "Statement": [
               {
                 "Effect": "Allow",
-                "Action": "ec2:Describe*",
-                "Resource": "*"
+                "Action": "ec2:*SecurityGroup*",
+                "Resource": "*",
+                "Condition": {
+                  "StringEquals": {
+                    "aws:FederatedProvider": "${providerArn}",
+                    "${bucket}.${domain}${path}:aud": "${aud}",
+                    "${bucket}.${domain}${path}:sub": "${sub}"
+                  }
+                }
               }
             ]
           }
         """.stripIndent()
-        // TODO: Eucalyptus does not yet implement
-        //      final String permissionPolicy = """\
-        //        {
-        //          "Version": "2012-10-17",
-        //          "Statement": [
-        //            {
-        //              "Effect": "Allow",
-        //              "Action": "ec2:Describe*",
-        //              "Resource": "*",
-        //              "Condition": {
-        //                "StringEquals": {
-        //                  "aws:FederatedProvider": "${providerArn}",
-        //                  "${bucket}.${domainAndPort}:aud": "${audience}",
-        //                  "${bucket}.${domainAndPort}:sub": "${sub}"
-        //                }
-        //              }
-        //            }
-        //          ]
-        //        }
-        //      """.stripIndent()
 
         String roleName = "${bucket}-role"
         N4j.print "Creating role for use use with provider: ${roleName}"
@@ -573,41 +570,132 @@ class TestSTSAssumeRoleWithWebIdentity {
       }
 
       getEC2Client(new AWSCredentialsProvider() {
+        AWSCredentials awsCredentials = null
         @Override
         public AWSCredentials getCredentials( ) {
-          N4j.print "Getting credentials using assume role with web identity"
-          getStsClient( ).with {
-            assumeRoleWithWebIdentity( new AssumeRoleWithWebIdentityRequest( validParameters ) ).with {
-              N4j.assertThat(assumedRoleUser != null, "Expected assumedRoleUser")
-              N4j.assertThat(assumedRoleUser.arn != null, "Expected assumedRoleUser.arn")
-              N4j.assertThat(assumedRoleUser.assumedRoleId != null, "Expected assumedRoleUser.assumedRoleId")
-              N4j.assertThat(packedPolicySize == null, "Unexpected packedPolicySize")
-              N4j.assertThat(providerArn == provider, "Expected provider ${providerArn}, but was: ${provider}")
-              N4j.assertThat(aud == audience, "Expected audience ${aud}, but was: ${audience}")
-              N4j.assertThat(
-                  sub == subjectFromWebIdentityToken,
-                  "Expected subjectFromWebIdentityToken ${sub}, but was: ${subjectFromWebIdentityToken}")
+          if ( awsCredentials == null ) {
+            N4j.print "Getting credentials using assume role with web identity"
+            awsCredentials = getStsClient( ).with {
+              assumeRoleWithWebIdentity( new AssumeRoleWithWebIdentityRequest( validParameters ) ).with {
+                N4j.assertThat(assumedRoleUser != null, "Expected assumedRoleUser")
+                N4j.assertThat(assumedRoleUser.arn != null, "Expected assumedRoleUser.arn")
+                N4j.assertThat(assumedRoleUser.assumedRoleId != null, "Expected assumedRoleUser.assumedRoleId")
+                N4j.assertThat(packedPolicySize == null, "Unexpected packedPolicySize")
+                N4j.assertThat(providerArn == provider, "Expected provider ${providerArn}, but was: ${provider}")
+                N4j.assertThat(aud == audience, "Expected audience ${aud}, but was: ${audience}")
+                N4j.assertThat(
+                    sub == subjectFromWebIdentityToken,
+                    "Expected subjectFromWebIdentityToken ${sub}, but was: ${subjectFromWebIdentityToken}")
 
-              N4j.assertThat(credentials != null, "Expected credentials")
-              N4j.assertThat(credentials.expiration != null, "Expected credentials expiration")
-              N4j.assertThat(
-                  Math.abs(Math.abs((credentials.expiration.time - System.currentTimeMillis()) / 1000l) - 971) < 30,
-                  "Expected credentials to respect duration")
-              new BasicSessionCredentials(
-                  credentials.accessKeyId,
-                  credentials.secretAccessKey,
-                  credentials.sessionToken
-              );
+                N4j.assertThat(credentials != null, "Expected credentials")
+                N4j.assertThat(credentials.expiration != null, "Expected credentials expiration")
+                N4j.assertThat(
+                    Math.abs(Math.abs((credentials.expiration.time - System.currentTimeMillis()) / 1000l) - 971) < 30,
+                    "Expected credentials to respect duration")
+                new BasicSessionCredentials(
+                    credentials.accessKeyId,
+                    credentials.secretAccessKey,
+                    credentials.sessionToken
+                )
+              }
             }
           }
+          awsCredentials
         }
 
         @Override
-        public void refresh() {
+        public void refresh( ) {
+          awsCredentials = null
         }
       }).with {
         N4j.print "Describing security groups using assumed role credentials"
-        N4j.print describeSecurityGroups().toString()
+        N4j.print describeSecurityGroups( ).with { DescribeSecurityGroupsResult result ->
+          N4j.assertThat( securityGroups!=null && securityGroups.size()>0, "Expected visible security groups" )
+          result.toString( )
+        }
+
+        String groupName = "${namePrefix}group-1"
+        N4j.print "Creating security group ${groupName} using assumed role credentials"
+        createSecurityGroup( new CreateSecurityGroupRequest( groupName: groupName, description: 'STS assume role with web identity test group' ) )
+
+        N4j.print "Deleting security group ${groupName} using assumed role credentials"
+        deleteSecurityGroup( new DeleteSecurityGroupRequest( groupName: groupName ) )
+      }
+
+      N4j.print "Testing access denied using alternative aud/sub values"
+      [
+          [
+              aud: aud,
+              sub: altSub
+          ],
+          [
+              aud: altAud,
+              sub: sub
+          ],
+          [
+              aud: altAud,
+              sub: altSub
+          ]
+      ].each { parameters ->
+        String testAud = parameters.get('aud')
+        String testSub = parameters.get('sub')
+        getEC2Client( new AWSCredentialsProvider( ) {
+          AWSCredentials awsCredentials = null
+          @Override
+          public AWSCredentials getCredentials( ) {
+            if ( awsCredentials == null ) {
+              awsCredentials = getStsClient( ).with {
+                N4j.print "Getting credentials using assume role with web identity using aud:${testAud} sub:${testSub}"
+                Map<String, Object> assumeRoleParameters = [:]
+                assumeRoleParameters << validParameters
+                assumeRoleParameters << [webIdentityToken: generateIdentityToken( System.currentTimeMillis( ), issuerIdentifier, testAud, testSub )]
+                assumeRoleWithWebIdentity( new AssumeRoleWithWebIdentityRequest( assumeRoleParameters ) ).with {
+                  N4j.assertThat(testAud == audience, "Expected audience ${testAud}, but was: ${audience}")
+                  N4j.assertThat(
+                      testSub == subjectFromWebIdentityToken,
+                      "Expected subjectFromWebIdentityToken ${testSub}, but was: ${subjectFromWebIdentityToken}")
+                  N4j.assertThat(credentials != null, "Expected credentials")
+                  new BasicSessionCredentials(
+                      credentials.accessKeyId,
+                      credentials.secretAccessKey,
+                      credentials.sessionToken
+                  )
+                }
+              }
+            }
+            awsCredentials
+          }
+
+          @Override
+          public void refresh() {
+            awsCredentials = null
+          }
+        } ).with {
+          N4j.print "Describing security groups using assumed role credentials with invalid aud and/or sub"
+          try {
+            N4j.print describeSecurityGroups().with { DescribeSecurityGroupsResult result ->
+              N4j.assertThat(securityGroups==null || securityGroups.empty, "Expected no visible security groups")
+              result.toString( )
+            }
+          } catch ( AmazonServiceException e ) {
+            N4j.print e.toString( )
+            N4j.assertThat( e.statusCode >= 403, "Expected status code >=403, but was: ${e.statusCode}")
+          }
+
+          String groupName = "${namePrefix}group-2"
+          cleanupTasks.add{
+            N4j.print "Deleting security group ${groupName} using assumed role credentials"
+            deleteSecurityGroup( new DeleteSecurityGroupRequest( groupName: groupName ) )
+          }
+          try {
+            N4j.print "Creating security group ${groupName} using assumed role credentials with invalid aud and/or sub (should fail)"
+            createSecurityGroup( new CreateSecurityGroupRequest( groupName: groupName, description: 'STS assume role with web identity test group' ) )
+            N4j.assertThat( false, "Expected security group creation failure due to invalid aud and/or sub")
+          } catch ( AmazonServiceException e ) {
+            N4j.print e.toString( )
+            N4j.assertThat( e.statusCode >= 403, "Expected status code >=403, but was: ${e.statusCode}")
+          }
+        }
       }
 
       N4j.print "Test complete"
@@ -616,6 +704,8 @@ class TestSTSAssumeRoleWithWebIdentity {
       cleanupTasks.reverseEach { Runnable cleanupTask ->
         try {
           cleanupTask.run()
+        } catch ( AmazonServiceException e ) {
+          N4j.print "Error in clean up: ${e}"
         } catch ( Exception e ) {
           e.printStackTrace()
         }
@@ -625,7 +715,7 @@ class TestSTSAssumeRoleWithWebIdentity {
 
   private String generateIdentityToken( final long tokenIssueTime, final String issuerIdentifier, final String aud, final String sub ) {
     final KeyFactory factory = KeyFactory.getInstance("RSA")
-    final PrivateKey key = factory.generatePrivate(new RSAPrivateKeySpec(new BigInteger(modulusBytes), new BigInteger(privateExponentBytes)));
+    final PrivateKey key = factory.generatePrivate(new RSAPrivateKeySpec(new BigInteger(modulusBytes), new BigInteger(privateExponentBytes)))
     final String headerB64 = Base64.urlEncoder.encodeToString("""{"typ":"JWT", "alg":"RS512", "kid":"${kid}"}""".getBytes(StandardCharsets.UTF_8))
     final String body = """\
       {
