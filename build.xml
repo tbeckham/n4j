@@ -16,6 +16,8 @@
     <property name="inifile" value="euca-admin.ini"/>
     <property name="tests" value="DefaultSuite.xml"/>
     <property name="ivy.cache.ttl.default" value="1d"/>
+    <property name="javac.source" value="1.8"/>
+    <property name="javac.target" value="${javac.source}"/>
 
     <!-- bootstrap-ivy -->
     <target name="bootstrap-ivy" description="Install ivy">
@@ -40,24 +42,24 @@
     </path>
 
     <!-- delete build and results directories -->
-    <target name="clean">
+    <target name="clean" description="Clean build work, and artifacts">
         <delete dir="${build.dir}"/>
         <delete dir="${deps.dir}"/>
     </target>
 
     <!-- delete build, results and dependencies directories -->
-    <target name="clean-all" depends="clean">
+    <target name="clean-all" depends="clean" description="Clean build work, artifacts and test results">
         <delete dir="${testng.output.dir}"/>
     </target>
 
     <!-- compile all classes of src.dir -->
-    <target name="compile" depends="download-deps">
+    <target name="compile" depends="download-deps" description="Compile tests">
         <mkdir dir="${classes.dir}"/>
         <taskdef name="groovyc"
                  classname="org.codehaus.groovy.ant.Groovyc"
                  classpathref="classpath"/>
         <groovyc srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeAntRuntime="no" fork="yes">
-            <javac/>
+            <javac source="${javac.source}" target="${javac.target}" />
         </groovyc>
         <copy file="log4j.properties" todir="${classes.dir}"/>
         <gunzip src="zerofile.gz" dest="${classes.dir}" />
@@ -68,7 +70,7 @@
     <!-- TODO: Have the other tasks check to see if they need to run, or what (if anything) -->
     <!-- needs to be recompiled, to speed up the process. Then we could do away with this target -->
     <!-- and roll it back into runTestNG. -->
-    <target name="test-only">
+    <target name="test-only" description="Run tests without building">
         <taskdef name="testng" classname="org.testng.TestNGAntTask">
             <classpath>
                 <fileset dir="${deps.dir}">
@@ -88,11 +90,11 @@
     </target>
 
     <!-- compile all and run the tests defined by ${tests} -->
-    <target name="runTestNG" depends="compile, test-only"/>
+    <target name="runTestNG" depends="compile, test-only"  description="Build and run tests"/>
 
     <!-- clean, build and run tests -->
-    <target name="clean-build" depends="clean, runTestNG"/>
+    <target name="clean-build" depends="clean, runTestNG" description="Clean, build and run tests"/>
 
     <!-- clean all, build and run tests -->
-    <target name="clean-all-build" depends="clean-all, runTestNG"/>
+    <target name="clean-all-build" depends="clean-all, runTestNG" description="Clean all, build and run tests"/>
 </project>
