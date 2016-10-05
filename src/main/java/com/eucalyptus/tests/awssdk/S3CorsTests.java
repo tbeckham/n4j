@@ -14,7 +14,6 @@ import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
 
 import static org.testng.AssertJUnit.assertTrue;
 
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +31,6 @@ import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
 import com.amazonaws.services.s3.model.CORSRule;
 import com.amazonaws.services.s3.model.CORSRule.AllowedMethods;
 import com.amazonaws.services.s3.model.Owner;
-import com.amazonaws.services.s3.model.TagSet;
 
 /**
  * <p>
@@ -258,28 +256,8 @@ public class S3CorsTests {
       assertTrue("Caught AmazonServiceException trying to get the bucket CORS config: " + ase.getMessage(), false);
     }
 
-    try {
-      print(account + ": Preflight request for bucket CORS config for " + bucketName);
-      //LPT Create sending various preflight OPTIONS requests,
-      //and validating the preflight responses against the CORS config
-
-      //LPT Create new data structure and method:
-      //PreflightCorsRequest preflightRequest = new PreflightCorsRequest(...);
-      //s3.issuePreflightCorsCheck(bucketName, preflightRequest);
-
-      //LPT For now, force the test to pass
-      AmazonServiceException aseForced = new AmazonServiceException("Forced exception for preflight request");
-      aseForced.setErrorCode("NotImplemented");
-      aseForced.setRequestId("forced");
-      aseForced.setServiceName("Amazon S3");
-      aseForced.setStatusCode(501);
-      throw aseForced;
-
-    } catch (AmazonServiceException ase) {
-      printException(ase);
-      assertTrue("Expected response status 501 NotImplemented, instead got: " + ase.getStatusCode(), ase.getStatusCode() == 501);
-    }
-
+    // Preflight OPTIONS requests tests implemented in nephoria (python) instead.
+    
     try {
       print(account + ": Deleting bucket CORS config for " + bucketName);
       s3.deleteBucketCrossOriginConfiguration(bucketName);
