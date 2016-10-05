@@ -273,6 +273,29 @@ class TestSTSAssumeRoleWithWebIdentity {
             ))
           }
         }
+
+        N4j.print "Checking tokens.rolearnaliaswhitelist cloud property"
+        final String roleArnWhitelist = describeProperties(new DescribePropertiesRequest(
+            properties: ['tokens.rolearnaliaswhitelist']
+        )).with {
+          properties[0].value
+        }
+        N4j.print "Found tokens.rolearnaliaswhitelist = ${roleArnWhitelist}"
+
+        if ('*' != roleArnWhitelist) {
+          N4j.print "Setting cloud property tokens.rolearnaliaswhitelist=*"
+          modifyPropertyValue(new ModifyPropertyValueRequest(
+              name: 'tokens.rolearnaliaswhitelist',
+              value: '*'
+          ))
+          cleanupTasks.add {
+            N4j.print "Setting cloud property tokens.rolearnaliaswhitelist=${roleArnWhitelist}"
+            modifyPropertyValue(new ModifyPropertyValueRequest(
+                name: 'tokens.rolearnaliaswhitelist',
+                value: roleArnWhitelist
+            ))
+          }
+        }
         void
       }
 
@@ -380,9 +403,16 @@ class TestSTSAssumeRoleWithWebIdentity {
         N4j.print "Bucket created for oidc discovery info: ${bucket}"
       }
 
+      String accountAlias = ''
       String roleArn = ''
       String providerArn = ''
       getIamClient(credentials).with {
+        N4j.print "Getting account alias"
+        listAccountAliases( ).with {
+          accountAlias = accountAliases?.getAt( 0 )
+        }
+        N4j.print "Account alias : ${accountAlias}"
+
         N4j.print "Creating IAM resources for assuming role"
         N4j.print "Creating oidc provider"
         providerArn = createOpenIDConnectProvider(new CreateOpenIDConnectProviderRequest(
@@ -569,7 +599,7 @@ class TestSTSAssumeRoleWithWebIdentity {
         }
       }
 
-      getEC2Client(new AWSCredentialsProvider() {
+      final AWSCredentialsProvider roleCredentialsProvider = new AWSCredentialsProvider() {
         AWSCredentials awsCredentials = null
         @Override
         public AWSCredentials getCredentials( ) {
@@ -607,12 +637,20 @@ class TestSTSAssumeRoleWithWebIdentity {
         public void refresh( ) {
           awsCredentials = null
         }
-      }).with {
+      }
+
+      getEC2Client( roleCredentialsProvider ).with {
         N4j.print "Describing security groups using assumed role credentials"
         N4j.print describeSecurityGroups( ).with { DescribeSecurityGroupsResult result ->
           N4j.assertThat( securityGroups!=null && securityGroups.size()>0, "Expected visible security groups" )
           result.toString( )
         }
+
+        N4j.print "Switching to use account alias in role arn"
+        N4j.print "was : ${validParameters['roleArn']}"
+        validParameters['roleArn'] = validParameters['roleArn'].toString( ).replaceFirst( '[0-9]{12}', accountAlias )
+        N4j.print "now : ${validParameters['roleArn']}"
+        roleCredentialsProvider.refresh( )
 
         String groupName = "${namePrefix}group-1"
         N4j.print "Creating security group ${groupName} using assumed role credentials"
