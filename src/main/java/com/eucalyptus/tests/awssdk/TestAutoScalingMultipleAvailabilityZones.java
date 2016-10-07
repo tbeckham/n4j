@@ -18,7 +18,7 @@
  * additional information or have any questions.
  ************************************************************************/
 
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.eucalyptus.tests.awssdk.N4j.*;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * This application tests auto scaling with multiple availability zones.

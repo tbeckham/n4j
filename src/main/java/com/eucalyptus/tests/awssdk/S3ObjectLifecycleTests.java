@@ -60,13 +60,13 @@
  *   NEEDED TO COMPLY WITH ANY SUCH LICENSES OR RIGHTS.
  ************************************************************************/
 
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.N4j.assertThat;
-import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
-import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
-import static com.eucalyptus.tests.awssdk.N4j.print;
-import static com.eucalyptus.tests.awssdk.N4j.testInfo;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.assertThat;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.eucaUUID;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.print;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.testInfo;
 import static org.testng.AssertJUnit.assertTrue;
 import static org.testng.AssertJUnit.fail;
 

@@ -3,19 +3,19 @@
 <suite name="S3 Test Suite">
     <test name="S3_Tests">
         <classes>
-            <class name="com.eucalyptus.tests.awssdk.S3BucketACLTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3BucketTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3CopyObjectTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3CorsTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ListMpuTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ListObjectsTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ListVersionsTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3MultiPartUploadTests" />
-            <class name="com.eucalyptus.tests.awssdk.S3ObjectACLAcrossAccountsTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ObjectACLTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ObjectLifecycleTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ObjectMultiDeleteTests"/>
-            <class name="com.eucalyptus.tests.awssdk.S3ObjectTests"/>
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3BucketACLTests"/>-->
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.S3BucketTests"/>
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3CopyObjectTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3CorsTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ListMpuTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ListObjectsTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ListVersionsTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3MultiPartUploadTests" />-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ObjectACLAcrossAccountsTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ObjectACLTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ObjectLifecycleTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ObjectMultiDeleteTests"/>-->
+            <!--<class name="src.main.java.com.eucalyptus.tests.awssdk.S3ObjectTests"/>-->
         </classes>
     </test>
 </suite>

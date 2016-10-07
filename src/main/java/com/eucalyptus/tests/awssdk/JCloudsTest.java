@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.jclouds.Constants;
 import org.jclouds.ContextBuilder;
-import static com.eucalyptus.tests.awssdk.N4j.*;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
 import org.jclouds.compute.domain.ComputeMetadata;

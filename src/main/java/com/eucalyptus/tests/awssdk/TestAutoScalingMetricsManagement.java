@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.autoscaling.model.*;
 import org.testng.annotations.Test;
@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.eucalyptus.tests.awssdk.N4j.*;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
 
 
 /**

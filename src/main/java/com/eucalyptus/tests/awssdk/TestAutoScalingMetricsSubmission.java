@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.eucalyptus.tests.awssdk.N4j.*;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * This application tests submitting auto scaling metrics to CloudWatch.

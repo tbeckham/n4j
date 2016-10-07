@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk
+package src.main.java.com.eucalyptus.tests.awssdk
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling
 import com.amazonaws.services.autoscaling.model.*
