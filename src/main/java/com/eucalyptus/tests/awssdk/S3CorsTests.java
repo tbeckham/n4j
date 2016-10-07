@@ -1,13 +1,16 @@
 package com.eucalyptus.tests.awssdk;
 
+//LPT To switch between testing against Eucalyptus and AWS,
+//LPT (un)comment the code identified by LPTEuca and LPTAWS.
 import static com.eucalyptus.tests.awssdk.N4j.print;
 import static com.eucalyptus.tests.awssdk.N4j.testInfo;
 import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
 
-//LPT The below import is only needed for running against Eucalyptus
+//LPT OK to leave both imports uncommented.
+//LPTEuca The below import is only needed for running against Eucalyptus
 import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
-
-//LPT The below two imports are only needed for running against AWS
+//LPTAWS The below import is only needed for running against AWS
+import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
 
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -52,7 +55,7 @@ public class S3CorsTests {
 
   private static String bucketName = null;
   private static List<Runnable> cleanupTasks = null;
-  //LPT don't declare this local var if running against AWS
+  //LPTAWS Next line only needed for AWS, OK to leave uncommented.
   private static AmazonS3 s3 = null;
   private static String account = null;
   private static Owner owner = null;
@@ -64,10 +67,10 @@ public class S3CorsTests {
     print("### PRE SUITE SETUP - " + this.getClass().getSimpleName());
     try {
       account = this.getClass().getSimpleName().toLowerCase();
-      //LPT Declare s3 this way for Eucalyptus only, because AWS won't 
-      //    let you create an account via API.
+      //LPTEuca Declare s3 this way for Eucalyptus only, because AWS won't 
+      //LPTEuca let you create an account via API. Comment out for AWS.
       s3 = initS3ClientWithNewAccount(account, "admin");
-      //LPT Declare s3 this way for AWS
+      //LPTAWS Declare s3 this way for AWS. Comment out for Euca.
       //initS3Client();
     } catch (Exception e) {
       try {
@@ -85,7 +88,8 @@ public class S3CorsTests {
   @AfterClass
   public void teardown() throws Exception {
     print("### POST SUITE CLEANUP - " + this.getClass().getSimpleName());
-    //LPT Don't do this with AWS, won't let you create an account via API
+    //LPTEuca AWS won't let you create an account via API.
+    //LPTEuca Comment out for AWS.
     N4j.deleteAccount(account);
     s3 = null;
   }
@@ -132,32 +136,30 @@ public class S3CorsTests {
   public void testCors() throws Exception {
     testInfo(this.getClass().getSimpleName() + " - testCors");
 
-    boolean error;
-
-    error = false;
     try {
-      print(account + ": Fetching bucket CORS config for " + bucketName);
-      s3.getBucketCrossOriginConfiguration(bucketName);
+      print(account + ": Fetching empty bucket CORS config for " + bucketName);
+      BucketCrossOriginConfiguration corsConfig = s3.getBucketCrossOriginConfiguration(bucketName);
+      assertTrue("Expected to receive no CORS config (haven't created one yet), but did! " + 
+          "Returned corsConfig " + 
+          (corsConfig == null ? "is null" : "has " + corsConfig.getRules().size() + " rules."), 
+          corsConfig == null || corsConfig.getRules().size() == 0);
     } catch (AmazonServiceException ase) {
-      verifyException(ase);
-      error = true;
-    } finally {
-      assertTrue("Expected to receive a 501 NotImplemented error but did not", error);
+      printException(ase);
+      assertTrue("Caught AmazonServiceException trying to get the empty bucket CORS config: " + ase.getMessage(), false);
     }
 
-    error = false;
     try {
       print(account + ": Setting bucket CORS config for " + bucketName);
       /**
        * Create a CORS configuration of several rules, based on the examples in:
        * http://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
        */
-      List<CORSRule> corsRuleList = new ArrayList<CORSRule>(2);
+      List<CORSRule> corsRuleListCreated = new ArrayList<CORSRule>(2);
 
       CORSRule corsRuleGets = new CORSRule();
       corsRuleGets.setAllowedOrigins("*");
       corsRuleGets.setAllowedMethods(AllowedMethods.GET);
-      corsRuleList.add(corsRuleGets);
+      corsRuleListCreated.add(corsRuleGets);
 
       CORSRule corsRulePuts = new CORSRule();
       corsRulePuts.setAllowedOrigins("https", "http://*.example1.com", "http://www.example2.com");
@@ -166,7 +168,7 @@ public class S3CorsTests {
           AllowedMethods.POST, 
           AllowedMethods.DELETE);
       corsRulePuts.setAllowedHeaders("*");
-      corsRuleList.add(corsRulePuts);
+      corsRuleListCreated.add(corsRulePuts);
 
       CORSRule corsRuleExtended = new CORSRule();
       corsRuleExtended.setAllowedOrigins("*");
@@ -178,51 +180,102 @@ public class S3CorsTests {
           "x-amz-server-side-encryption",
           "x-amz-request-id",
           "x-amz-id-2");
-      corsRuleList.add(corsRuleExtended);      
+      corsRuleListCreated.add(corsRuleExtended);
 
-      BucketCrossOriginConfiguration corsConfig = new BucketCrossOriginConfiguration(corsRuleList);
-      s3.setBucketCrossOriginConfiguration(bucketName, corsConfig);
+      BucketCrossOriginConfiguration corsConfigCreated = new BucketCrossOriginConfiguration(corsRuleListCreated);
+      s3.setBucketCrossOriginConfiguration(bucketName, corsConfigCreated);
+      
     } catch (AmazonServiceException ase) {
-      verifyException(ase);
-      error = true;
-    } finally {
-      assertTrue("Expected to receive a 501 NotImplemented error but did not", error);
+      printException(ase);
+      assertTrue("Caught AmazonServiceException trying to set the bucket CORS config: " + ase.getMessage(), false);
     }
 
-    error = false;
     try {
-      print(account + ": Preflight request for bucket CORS config for " + bucketName);
-      //LPT: Create sending various preflight OPTIONS requests,
-      //and validating the preflight responses against the CORS config
+      //LPT Is there an async delay between when setting a CORS config returns to the
+      // caller, and when it's available for a Get? Delay to test that.
+      Thread.sleep(10000);
+      
+      print(account + ": Fetching populated bucket CORS config for " + bucketName);
+      BucketCrossOriginConfiguration corsConfigRetrieved = s3.getBucketCrossOriginConfiguration(bucketName);
+      assertTrue("No CORS config retrieved.", corsConfigRetrieved != null);
 
-      //LPT: Create new data structure and method:
-      //PreflightCorsRequest preflightRequest = new PreflightCorsRequest(...);
-      //s3.issuePreflightCorsCheck(bucketName, preflightRequest);
+      List<CORSRule> corsRuleListRetrieved = corsConfigRetrieved.getRules();
+      assertTrue("Expected to receive a CORS config of 3 rules. Returned corsConfig has " + 
+          corsRuleListRetrieved.size() + " rules.", 
+          corsRuleListRetrieved.size() == 3);
 
-      //LPT: For now, force the test to pass
-      AmazonServiceException aseForced = new AmazonServiceException("Forced exception for preflight request");
-      aseForced.setErrorCode("NotImplemented");
-      aseForced.setRequestId("forced");
-      aseForced.setServiceName("Amazon S3");
-      aseForced.setStatusCode(501);
-      throw aseForced;
+      // Find the only rule with an ID, and check its fields
 
+      int ruleSequence = 0;
+      for (CORSRule corsRuleRetrieved : corsRuleListRetrieved ) {
+          ruleSequence++;
+
+          assertTrue("Received a null CORS rule in the retrieved CORS configuration",
+                     corsRuleListRetrieved != null);
+
+          String ruleIdReceived = corsRuleRetrieved.getId();
+          if (ruleIdReceived != null &&
+              ruleIdReceived.equals("ManuallyAssignedId1")) {
+
+              // It should be the 3rd CORS rule
+              assertTrue("Rule found is out of sequence, should be 3, is: " + ruleSequence,
+                         ruleSequence == 3);
+
+              List<String> originsReceived = corsRuleRetrieved.getAllowedOrigins();
+              assertTrue("Allowed Origin is unexpected: " + originsReceived, 
+                         originsReceived != null && originsReceived.size() == 1 &&
+                         originsReceived.get(0).equals("*"));
+
+              List<CORSRule.AllowedMethods> methodsReceived = corsRuleRetrieved.getAllowedMethods();
+              assertTrue("Allowed Methods is unexpected: " + methodsReceived, 
+                         methodsReceived != null && methodsReceived.size() == 1 &&
+                         methodsReceived.get(0).equals(CORSRule.AllowedMethods.GET));
+
+              List<String> allowedHeadersReceived = corsRuleRetrieved.getAllowedHeaders();
+              assertTrue("Allowed Headers is unexpected: " + allowedHeadersReceived, 
+                         allowedHeadersReceived != null && allowedHeadersReceived.size() == 1 &&
+                         allowedHeadersReceived.get(0).equals("*"));
+
+              int maxAgeReceived = corsRuleRetrieved.getMaxAgeSeconds();
+              assertTrue("Max Age in Seconds is unexpected: " + maxAgeReceived,
+                         maxAgeReceived == 3000);
+
+              ArrayList<String> exposedHeadersExpected = new ArrayList<String>(3);
+              exposedHeadersExpected.add("x-amz-server-side-encryption");
+              exposedHeadersExpected.add("x-amz-request-id");
+              exposedHeadersExpected.add("x-amz-id-2");
+              List<String> exposedHeadersReceived = corsRuleRetrieved.getExposedHeaders();
+              assertTrue("Exposed Headers is unexpected: " + exposedHeadersReceived, 
+                         exposedHeadersReceived != null && 
+                         exposedHeadersReceived.size() == exposedHeadersExpected.size() &&
+                         exposedHeadersReceived.containsAll(exposedHeadersExpected));
+          } //end if this is the rule we validate
+      } //end for all rules retrieved
     } catch (AmazonServiceException ase) {
-      verifyException(ase);
-      error = true;
-    } finally {
-      assertTrue("Expected to receive a 501 NotImplemented error but did not", error);
+      printException(ase);
+      assertTrue("Caught AmazonServiceException trying to get the bucket CORS config: " + ase.getMessage(), false);
     }
 
-    error = false;
+    // Preflight OPTIONS requests tests implemented in nephoria (python) instead.
+    
     try {
       print(account + ": Deleting bucket CORS config for " + bucketName);
       s3.deleteBucketCrossOriginConfiguration(bucketName);
     } catch (AmazonServiceException ase) {
-      verifyException(ase);
-      error = true;
-    } finally {
-      assertTrue("Expected to receive a 501 NotImplemented error but did not", error);
+      printException(ase);
+      assertTrue("Caught AmazonServiceException trying to delete the bucket CORS config: " + ase.getMessage(), false);
+    }
+
+    try {
+      print(account + ": Fetching empty bucket CORS config after deletion, for " + bucketName);
+      BucketCrossOriginConfiguration corsConfig = s3.getBucketCrossOriginConfiguration(bucketName);
+      assertTrue("Expected to receive no CORS config (deleted it), but did! " + 
+          "Returned corsConfig " + 
+          (corsConfig == null ? "is null" : "has " + corsConfig.getRules().size() + " rules."), 
+          corsConfig == null || corsConfig.getRules().size() == 0);
+    } catch (AmazonServiceException ase) {
+      printException(ase);
+      assertTrue("Caught AmazonServiceException trying to get the empty (deleted) bucket CORS config: " + ase.getMessage(), false);
     }
 
   }
@@ -232,17 +285,8 @@ public class S3CorsTests {
     print("Caught Exception: " + ase.getMessage());
     print("HTTP Status Code: " + ase.getStatusCode());
     print("Amazon Error Code: " + ase.getErrorCode());
+    print("Amazon Error Message: " + ase.getErrorMessage());
     print("Request ID: " + ase.getRequestId());
   }
 
-  private void verifyException(AmazonServiceException ase) {
-    print("Caught Exception: " + ase.getMessage());
-    print("HTTP Status Code: " + ase.getStatusCode());
-    print("Amazon Error Code: " + ase.getErrorCode());
-    print("Request ID: " + ase.getRequestId());
-    assertTrue("Expected HTTP status code to be 501 but got " + ase.getStatusCode(), ase.getStatusCode() == 501);
-    assertTrue("Expected AWS error code to be NotImplemented bug got " + ase.getErrorCode(), ase.getErrorCode().equals("NotImplemented"));
-    assertTrue("Invalid or blank message", ase.getMessage() != null || !ase.getMessage().isEmpty());
-    assertTrue("Invalid or blank request ID", ase.getRequestId() != null || !ase.getRequestId().isEmpty());
-  }
 }
