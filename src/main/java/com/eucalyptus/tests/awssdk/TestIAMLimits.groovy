@@ -20,12 +20,6 @@
 package src.main.java.com.eucalyptus.tests.awssdk
 
 import com.amazonaws.AmazonServiceException
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.handlers.AbstractRequestHandler
-import com.amazonaws.internal.StaticCredentialsProvider
-import com.amazonaws.regions.Region
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.identitymanagement.model.CreateAccountAliasRequest
 import com.amazonaws.services.identitymanagement.model.CreateGroupRequest
 import com.amazonaws.services.identitymanagement.model.CreateInstanceProfileRequest
@@ -40,7 +34,9 @@ import com.amazonaws.services.identitymanagement.model.DeleteUserPolicyRequest
 import com.amazonaws.services.identitymanagement.model.DeleteUserRequest
 import com.amazonaws.services.identitymanagement.model.NoSuchEntityException
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest
-import com.github.sjones4.youcan.youare.YouAreClient
+
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import org.testng.annotations.Test;
 
 /**
  * Tests name limits for IAM resources.
@@ -53,51 +49,17 @@ import com.github.sjones4.youcan.youare.YouAreClient
  *   
  */
 class TestIAMLimits {
-  
-  private final String host = '10.111.X.XXX'
 
-  private final AWSCredentialsProvider credentials = new StaticCredentialsProvider( new BasicAWSCredentials(
-      'AKI...',
-      '...'
-  ) )
-
-  public static void main( String[] args ) throws Exception {
-    new TestIAMLimits( ).test( )
-  }
-
-  private String cloudUri( String host, String servicePath ) {
-    URI.create( "http://${host}:8773/" )
-        .resolve( servicePath )
-        .toString( )
-  }
-
-  private YouAreClient getYouAreClient( final String host, final AWSCredentialsProvider credentials  ) {
-    final YouAreClient euare = new YouAreClient( credentials )
-    if ( host ) {
-      euare.setEndpoint( cloudUri( host, '/services/Euare' ) )
-    } else {
-      euare.setRegion( Region.getRegion( Regions.US_EAST_1 ) )
-    }
-    euare
-  }
-
-  private boolean assertThat( boolean condition,
-                              String message ){
-    assert condition : message
-    true
-  }
-
-  private void print( String text ) {
-    System.out.println( text )
-  }
-
+  @Test
   public void test() throws Exception {
-    final String namePrefix = UUID.randomUUID().toString().substring(0,8) + "-"
+    testInfo(this.getClass().getSimpleName());
+    getCloudInfo();
+    final String namePrefix = NAME_PREFIX
     print( "Using resource prefix for test: ${namePrefix}" )
 
     final List<Runnable> cleanupTasks = [] as List<Runnable>
     try {
-      getYouAreClient( host, credentials ).with {
+      youAre.with {
         String userName = "${namePrefix}user1"
         cleanupTasks.add{
           println( "Deleting user ${userName}" )

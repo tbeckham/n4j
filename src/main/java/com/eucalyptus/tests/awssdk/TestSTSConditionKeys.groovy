@@ -17,6 +17,10 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient
 import com.github.sjones4.youcan.youare.YouAre
 import com.github.sjones4.youcan.youare.YouAreClient
 import org.testng.annotations.Test
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.minimalInit
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
 
 import java.text.SimpleDateFormat
 
@@ -34,11 +38,15 @@ import java.text.SimpleDateFormat
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_disable-perms.html#denying-access-to-credentials-creator
  */
 class TestSTSConditionKeys {
-  
-  private final String host = '10.X.Y.Z'
 
-  private final AWSCredentialsProvider credentials =
-      new StaticCredentialsProvider( new BasicAWSCredentials( 'AKI...', '...' ) )
+  public TestSTSConditionKeys( ) {
+    minimalInit()
+    this.host = CLC_IP
+    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+  }
+
+  private final String host
+  private final AWSCredentialsProvider credentials
 
   private String cloudUri( String host, String servicePath ) {
     URI.create( "http://${host}:8773/" )

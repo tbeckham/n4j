@@ -13,6 +13,10 @@ import com.github.sjones4.youcan.youare.model.CreateAccountRequest
 import com.github.sjones4.youcan.youare.model.DeleteAccountRequest
 import com.github.sjones4.youcan.youare.model.PutAccountPolicyRequest
 import org.testng.annotations.Test
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.minimalInit
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
 
 /**
  * Tests administrative functionality for IAM OpenID Connect providers.
@@ -22,12 +26,15 @@ import org.testng.annotations.Test
  */
 class TestIAMOpenIDConnectProviderAdministration {
   
-  private final String host = '10.X.Y.Z'
 
-  private final AWSCredentialsProvider credentials =
-      new StaticCredentialsProvider( new BasicAWSCredentials(
-          'AKI...',
-          '' ) )
+  public TestIAMOpenIDConnectProviderAdministration( ) {
+    minimalInit()
+    this.host = CLC_IP
+    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+  }
+  private final String host
+
+  private final AWSCredentialsProvider credentials
 
   private String cloudUri( String host, String servicePath ) {
     URI.create( "http://${host}:8773/" )
