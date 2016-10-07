@@ -40,17 +40,17 @@ import static N4j.minimalInit
  *
  *   https://eucalyptus.atlassian.net/browse/EUCA-9828
  */
-class TestAutoscalingEC2VPC {
+class TestAutoScalingEC2VPC {
 
   private final String host;
   private final AWSCredentialsProvider credentials
 
   public static void main( String[] args ) throws Exception {
-    final TestAutoscalingEC2VPC test =  new TestAutoscalingEC2VPC();
+    final TestAutoScalingEC2VPC test =  new TestAutoScalingEC2VPC();
     test.test();
   }
 
-  public TestAutoscalingEC2VPC() {
+  public TestAutoScalingEC2VPC() {
     minimalInit()
     this.host = CLC_IP;
     this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
