@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk
+package src.main.java.com.eucalyptus.tests.awssdk
 
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.ClientConfiguration
@@ -37,7 +37,14 @@ import com.github.sjones4.youcan.youprop.YouProp
 import com.github.sjones4.youcan.youprop.YouPropClient
 import com.github.sjones4.youcan.youprop.model.DescribePropertiesRequest
 import com.github.sjones4.youcan.youprop.model.ModifyPropertyValueRequest
+import org.testng.annotations.AfterClass
 import org.testng.annotations.Test
+
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.getCloudInfo
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+
 
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
@@ -68,27 +75,49 @@ import java.security.spec.RSAPrivateKeySpec
  */
 class TestSTSAssumeRoleWithWebIdentity {
 
-  // use host setting to switch between aws and qa, TODO:update all CHANGEME before testing
-  private static final String host = '10.X.Y.Z'            // TODO:CHANGEME ufs host ip
-  private static final AWSCredentialsProvider credentials = new StaticCredentialsProvider( new BasicAWSCredentials(
-      'AKI...',
-      ''  ) ) // TODO:CHANGEME creds for s3/iam use
-  private static final AWSCredentialsProvider adminCredentials = new StaticCredentialsProvider( new BasicAWSCredentials(
-      'AKI...',
-      ''  ) ) // TODO:CHANGEME creds for properties
+  public TestSTSAssumeRoleWithWebIdentity( ) {
+    getCloudInfo()
+    this.host = CLC_IP
+    this.adminCredentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+
+    // create a new user with all IAM permissions
+    N4j.createAccount(testAcct)
+    N4j.createUser(testAcct,testUser)
+    N4j.createIAMPolicy(testAcct,testUser, "allow-all",null)
+    AWSCredentials userCreds = N4j.getUserCreds(testAcct, testUser)
+    def userAK = userCreds.AWSAccessKeyId
+    def userSK = userCreds.AWSSecretKey
+    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( userAK, userSK ) )
+  }
+
+  /**
+   * Called after all the tests in a class
+   *
+   * @throws java.lang.Exception
+   */
+  @AfterClass
+  public void tearDownAfterClass() throws Exception {
+    N4j.deleteAccount(testAcct)
+  }
+
+  private final String host
+  private String testAcct= "test-acct"
+  private String testUser= "test-user"
+  private final AWSCredentialsProvider credentials
+  private final AWSCredentialsProvider adminCredentials
 
   // configurable / detected values
   private final Region region = Region.getRegion(Regions.US_WEST_1)
   private final String path = '/pathhere'
   private final String domainAndPort = host == null ?
-      's3-us-west-1.amazonaws.com' : // aws s3
-      "s3.${sniffDomain()}:8773".toString()
+          's3-us-west-1.amazonaws.com' : // aws s3
+          "s3.${sniffDomain()}:8773".toString()
   private final String domain = domainAndPort.contains(':') ?
-      domainAndPort.substring(0, domainAndPort.indexOf(':')) :
-      domainAndPort
+          domainAndPort.substring(0, domainAndPort.indexOf(':')) :
+          domainAndPort
   private final String thumbprint = host == null ?
-      'A9D53002E97E00E043244F3D170D6F4C414104FD' : // aws s3
-      sniffThumbprint("https://${domainAndPort}")
+          'A9D53002E97E00E043244F3D170D6F4C414104FD' : // aws s3
+          sniffThumbprint("https://${domainAndPort}")
 
   // arbitrary values for oidc registration / identity
   private final String aud = 'c6845610-9b57-4386-a1c4-7ffe45d03c92'
@@ -139,15 +168,15 @@ class TestSTSAssumeRoleWithWebIdentity {
       79
     '''.stripIndent()
   private final byte[] modulusBytes =
-      new BigInteger(modulus.replace(':', '').replace('\n', ''), 16).toByteArray()
+          new BigInteger(modulus.replace(':', '').replace('\n', ''), 16).toByteArray()
   private final byte[] privateExponentBytes =
-      new BigInteger(privateExponent.replace(':', '').replace('\n', ''), 16).toByteArray()
+          new BigInteger(privateExponent.replace(':', '').replace('\n', ''), 16).toByteArray()
 
 
-  private static String cloudUri(String servicePath) {
+  private String cloudUri(String servicePath) {
     URI.create("http://${host}:8773/")
-        .resolve(servicePath)
-        .toString()
+            .resolve(servicePath)
+            .toString()
   }
 
   private AWSSecurityTokenService getStsClient() {
@@ -191,7 +220,7 @@ class TestSTSAssumeRoleWithWebIdentity {
     ec2
   }
 
-  private static YouProp getYouPropClient(final AWSCredentialsProvider credentials) {
+  private YouProp getYouPropClient(final AWSCredentialsProvider credentials) {
     if (host) {
       new YouPropClient(credentials).with {
         setEndpoint(cloudUri("/services/Properties"))
@@ -202,10 +231,10 @@ class TestSTSAssumeRoleWithWebIdentity {
     }
   }
 
-  private static String sniffDomain() {
+  private String sniffDomain() {
     getYouPropClient(adminCredentials)?.with {
       describeProperties(new DescribePropertiesRequest(
-          properties: ['system.dns.dnsdomain']
+              properties: ['system.dns.dnsdomain']
       )).with {
         properties[0].value
       }
@@ -216,19 +245,19 @@ class TestSTSAssumeRoleWithWebIdentity {
     List<X509Certificate> certificates = []
     SSLContext context = SSLContext.getInstance("TLS")
     context.init(null, [
-        new X509TrustManager() {
-          @Override
-          void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) {}
+            new X509TrustManager() {
+              @Override
+              void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) {}
 
-          @Override
-          void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) {
-            certificates << x509Certificates[0]
-          }
+              @Override
+              void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) {
+                certificates << x509Certificates[0]
+              }
 
-          @Override
-          X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0] }
-        }] as TrustManager[]
-        , null)
+              @Override
+              X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0] }
+            }] as TrustManager[]
+            , null)
     SSLSocketFactory socketFactory = context.getSocketFactory()
     HttpsURLConnection urlConnection1 = (HttpsURLConnection) new URL(url).openConnection()
     urlConnection1.setSSLSocketFactory(socketFactory)
@@ -253,7 +282,7 @@ class TestSTSAssumeRoleWithWebIdentity {
       getYouPropClient(adminCredentials)?.with {
         N4j.print "Checking bootstrap.webservices.ssl.user_ssl_enable_hostname_verification cloud property"
         final String hostnameVerificationEnabled = describeProperties(new DescribePropertiesRequest(
-            properties: ['bootstrap.webservices.ssl.user_ssl_enable_hostname_verification']
+                properties: ['bootstrap.webservices.ssl.user_ssl_enable_hostname_verification']
         )).with {
           properties[0].value
         }
@@ -262,21 +291,21 @@ class TestSTSAssumeRoleWithWebIdentity {
         if ('false' != hostnameVerificationEnabled) {
           N4j.print "Setting cloud property bootstrap.webservices.ssl.user_ssl_enable_hostname_verification=false"
           modifyPropertyValue(new ModifyPropertyValueRequest(
-              name: 'bootstrap.webservices.ssl.user_ssl_enable_hostname_verification',
-              value: 'false'
+                  name: 'bootstrap.webservices.ssl.user_ssl_enable_hostname_verification',
+                  value: 'false'
           ))
           cleanupTasks.add {
             N4j.print "Setting cloud property bootstrap.webservices.ssl.user_ssl_enable_hostname_verification=true"
             modifyPropertyValue(new ModifyPropertyValueRequest(
-                name: 'bootstrap.webservices.ssl.user_ssl_enable_hostname_verification',
-                value: 'true'
+                    name: 'bootstrap.webservices.ssl.user_ssl_enable_hostname_verification',
+                    value: 'true'
             ))
           }
         }
 
         N4j.print "Checking tokens.rolearnaliaswhitelist cloud property"
         final String roleArnWhitelist = describeProperties(new DescribePropertiesRequest(
-            properties: ['tokens.rolearnaliaswhitelist']
+                properties: ['tokens.rolearnaliaswhitelist']
         )).with {
           properties[0].value
         }
@@ -285,14 +314,14 @@ class TestSTSAssumeRoleWithWebIdentity {
         if ('*' != roleArnWhitelist) {
           N4j.print "Setting cloud property tokens.rolearnaliaswhitelist=*"
           modifyPropertyValue(new ModifyPropertyValueRequest(
-              name: 'tokens.rolearnaliaswhitelist',
-              value: '*'
+                  name: 'tokens.rolearnaliaswhitelist',
+                  value: '*'
           ))
           cleanupTasks.add {
             N4j.print "Setting cloud property tokens.rolearnaliaswhitelist=${roleArnWhitelist}"
             modifyPropertyValue(new ModifyPropertyValueRequest(
-                name: 'tokens.rolearnaliaswhitelist',
-                value: roleArnWhitelist
+                    name: 'tokens.rolearnaliaswhitelist',
+                    value: roleArnWhitelist
             ))
           }
         }
@@ -374,13 +403,13 @@ class TestSTSAssumeRoleWithWebIdentity {
         N4j.print "Creating object for oidc jwks: jwks.json"
         String jwksObject = "${path.empty ? '' : path.substring(1) + '/'}jwks.json"
         putObject(new PutObjectRequest(
-            bucket,
-            jwksObject,
-            new ByteArrayInputStream(jwks.getBytes(StandardCharsets.UTF_8)),
-            new ObjectMetadata(
+                bucket,
+                jwksObject,
+                new ByteArrayInputStream(jwks.getBytes(StandardCharsets.UTF_8)),
+                new ObjectMetadata(
 
-                contentType: 'application/json'
-            )
+                        contentType: 'application/json'
+                )
         ).withCannedAcl(CannedAccessControlList.PublicRead))
         cleanupTasks.add {
           N4j.print "Deleting ${jwksObject} object from ${bucket}"
@@ -389,12 +418,12 @@ class TestSTSAssumeRoleWithWebIdentity {
         N4j.print "Creating object for oidc configuration: .well-known/openid-configuration"
         String oidcConfigurationObject = "${path.empty ? '' : path.substring(1) + '/'}.well-known/openid-configuration"
         putObject(new PutObjectRequest(
-            bucket,
-            oidcConfigurationObject,
-            new ByteArrayInputStream(configuration.getBytes(StandardCharsets.UTF_8)),
-            new ObjectMetadata(
-                contentType: 'application/json'
-            )
+                bucket,
+                oidcConfigurationObject,
+                new ByteArrayInputStream(configuration.getBytes(StandardCharsets.UTF_8)),
+                new ObjectMetadata(
+                        contentType: 'application/json'
+                )
         ).withCannedAcl(CannedAccessControlList.PublicRead))
         cleanupTasks.add {
           N4j.print "Deleting ${oidcConfigurationObject} object from ${bucket}"
@@ -416,13 +445,13 @@ class TestSTSAssumeRoleWithWebIdentity {
         N4j.print "Creating IAM resources for assuming role"
         N4j.print "Creating oidc provider"
         providerArn = createOpenIDConnectProvider(new CreateOpenIDConnectProviderRequest(
-            url: "https://${bucket}.${domainAndPort}${path}",
-            clientIDList: [
-                aud, altAud
-            ],
-            thumbprintList: [
-                thumbprint
-            ]
+                url: "https://${bucket}.${domainAndPort}${path}",
+                clientIDList: [
+                        aud, altAud
+                ],
+                thumbprintList: [
+                        thumbprint
+                ]
         ))?.with {
           openIDConnectProviderArn
         }
@@ -430,12 +459,12 @@ class TestSTSAssumeRoleWithWebIdentity {
         cleanupTasks.add {
           N4j.print "Deleting oidc provider: ${providerArn}"
           deleteOpenIDConnectProvider(new DeleteOpenIDConnectProviderRequest(
-              openIDConnectProviderArn: providerArn
+                  openIDConnectProviderArn: providerArn
           ))
         }
 
         getOpenIDConnectProvider(new GetOpenIDConnectProviderRequest(
-            openIDConnectProviderArn: providerArn
+                openIDConnectProviderArn: providerArn
         ))?.with {
           N4j.print "Provider details : ${it}"
         }
@@ -484,9 +513,9 @@ class TestSTSAssumeRoleWithWebIdentity {
         String roleName = "${bucket}-role"
         N4j.print "Creating role for use use with provider: ${roleName}"
         roleArn = createRole(new CreateRoleRequest(
-            path: '/',
-            roleName: roleName,
-            assumeRolePolicyDocument: trustPolicy
+                path: '/',
+                roleName: roleName,
+                assumeRolePolicyDocument: trustPolicy
         ))?.with {
           role?.arn
         }
@@ -494,22 +523,22 @@ class TestSTSAssumeRoleWithWebIdentity {
         cleanupTasks.add {
           N4j.print "Deleting role: ${roleArn}"
           deleteRole(new DeleteRoleRequest(
-              roleName: roleName
+                  roleName: roleName
           ))
         }
 
         N4j.print "Creating role permission policy: ${roleName}/role-policy"
         putRolePolicy(new PutRolePolicyRequest(
-            roleName: roleName,
-            policyName: 'role-policy',
-            policyDocument: permissionPolicy
+                roleName: roleName,
+                policyName: 'role-policy',
+                policyDocument: permissionPolicy
         ))
         N4j.print "Created iam resources for assuming role"
         cleanupTasks.add {
           N4j.print "Deleting role policy: ${roleName}/role-policy"
           deleteRolePolicy(new DeleteRolePolicyRequest(
-              roleName: roleName,
-              policyName: 'role-policy',
+                  roleName: roleName,
+                  policyName: 'role-policy',
           ))
         }
       }
@@ -525,21 +554,21 @@ class TestSTSAssumeRoleWithWebIdentity {
       N4j.print "Generated oidc id token: ${tokenString}"
 
       Map<String, Object> validParameters = [
-          durationSeconds: 971,
-          roleArn: roleArn,
-          roleSessionName: 'session',
-          webIdentityToken: tokenString
+              durationSeconds: 971,
+              roleArn: roleArn,
+              roleSessionName: 'session',
+              webIdentityToken: tokenString
       ]
 
       getStsClient( ).with {
         [
-            [durationSeconds: 899],
-            [durationSeconds: 3601],
-            [roleArn: 'arn:aws:iam:::role/r'],
-            [roleSessionName: 'a'],
-            [roleSessionName: 'a' * 65],
-            [webIdentityToken: '1'],
-            [webIdentityToken: ('ICAg' * (2048 / 3)) + tokenString],
+                [durationSeconds: 899],
+                [durationSeconds: 3601],
+                [roleArn: 'arn:aws:iam:::role/r'],
+                [roleSessionName: 'a'],
+                [roleSessionName: 'a' * 65],
+                [webIdentityToken: '1'],
+                [webIdentityToken: ('ICAg' * (2048 / 3)) + tokenString],
         ].each { invalidParameters ->
           try {
             Map<String, Object> parameters = [:]
@@ -555,9 +584,9 @@ class TestSTSAssumeRoleWithWebIdentity {
           }
         }
         [
-            tokenString.replace('.', ''),
-            'ICAg' + tokenString,
-            generateIdentityToken( System.currentTimeMillis( ), issuerIdentifier, UUID.randomUUID().toString(), sub ),
+                tokenString.replace('.', ''),
+                'ICAg' + tokenString,
+                generateIdentityToken( System.currentTimeMillis( ), issuerIdentifier, UUID.randomUUID().toString(), sub ),
         ].each { invalidTokenParameter ->
           try {
             Map<String, Object> parameters = [:]
@@ -614,18 +643,18 @@ class TestSTSAssumeRoleWithWebIdentity {
                 N4j.assertThat(providerArn == provider, "Expected provider ${providerArn}, but was: ${provider}")
                 N4j.assertThat(aud == audience, "Expected audience ${aud}, but was: ${audience}")
                 N4j.assertThat(
-                    sub == subjectFromWebIdentityToken,
-                    "Expected subjectFromWebIdentityToken ${sub}, but was: ${subjectFromWebIdentityToken}")
+                        sub == subjectFromWebIdentityToken,
+                        "Expected subjectFromWebIdentityToken ${sub}, but was: ${subjectFromWebIdentityToken}")
 
                 N4j.assertThat(credentials != null, "Expected credentials")
                 N4j.assertThat(credentials.expiration != null, "Expected credentials expiration")
                 N4j.assertThat(
-                    Math.abs(Math.abs((credentials.expiration.time - System.currentTimeMillis()) / 1000l) - 971) < 30,
-                    "Expected credentials to respect duration")
+                        Math.abs(Math.abs((credentials.expiration.time - System.currentTimeMillis()) / 1000l) - 971) < 30,
+                        "Expected credentials to respect duration")
                 new BasicSessionCredentials(
-                    credentials.accessKeyId,
-                    credentials.secretAccessKey,
-                    credentials.sessionToken
+                        credentials.accessKeyId,
+                        credentials.secretAccessKey,
+                        credentials.sessionToken
                 )
               }
             }
@@ -662,18 +691,18 @@ class TestSTSAssumeRoleWithWebIdentity {
 
       N4j.print "Testing access denied using alternative aud/sub values"
       [
-          [
-              aud: aud,
-              sub: altSub
-          ],
-          [
-              aud: altAud,
-              sub: sub
-          ],
-          [
-              aud: altAud,
-              sub: altSub
-          ]
+              [
+                      aud: aud,
+                      sub: altSub
+              ],
+              [
+                      aud: altAud,
+                      sub: sub
+              ],
+              [
+                      aud: altAud,
+                      sub: altSub
+              ]
       ].each { parameters ->
         String testAud = parameters.get('aud')
         String testSub = parameters.get('sub')
@@ -690,13 +719,13 @@ class TestSTSAssumeRoleWithWebIdentity {
                 assumeRoleWithWebIdentity( new AssumeRoleWithWebIdentityRequest( assumeRoleParameters ) ).with {
                   N4j.assertThat(testAud == audience, "Expected audience ${testAud}, but was: ${audience}")
                   N4j.assertThat(
-                      testSub == subjectFromWebIdentityToken,
-                      "Expected subjectFromWebIdentityToken ${testSub}, but was: ${subjectFromWebIdentityToken}")
+                          testSub == subjectFromWebIdentityToken,
+                          "Expected subjectFromWebIdentityToken ${testSub}, but was: ${subjectFromWebIdentityToken}")
                   N4j.assertThat(credentials != null, "Expected credentials")
                   new BasicSessionCredentials(
-                      credentials.accessKeyId,
-                      credentials.secretAccessKey,
-                      credentials.sessionToken
+                          credentials.accessKeyId,
+                          credentials.secretAccessKey,
+                          credentials.sessionToken
                   )
                 }
               }

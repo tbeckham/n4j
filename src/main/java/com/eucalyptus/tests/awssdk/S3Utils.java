@@ -1,7 +1,7 @@
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
-import static com.eucalyptus.tests.awssdk.N4j.assertThat;
-import static com.eucalyptus.tests.awssdk.N4j.print;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.assertThat;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.print;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.util.Iterator;
@@ -214,7 +214,6 @@ public class S3Utils {
    * @param key
    * @param acl
    * @param objectOwnerId
-   * @param bucketOwnerId
    * @throws Exception
    */
   public static void verifyObjectACL(AmazonS3 s3Client, String s3AccountOwner, String bucket, String key, AccessControlList acl, String objectOwnerId)

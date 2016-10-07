@@ -3,16 +3,16 @@
 <suite name="VPC Test Suite">
     <test name="VPC_Tests">
         <classes>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCAssociationManagement"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCAttributeManagement"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCDefaultVPC"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCManagement"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCNetworkAclEntryManagement"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCNetworkInterfaces"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCSubnetAvailableAddresses"/>
-            <class name="com.eucalyptus.tests.awssdk.TestEC2VPCValidation"/>
-            <class name="com.eucalyptus.tests.awssdk.TestELBDefaultVPC"/>
-            <class name="com.eucalyptus.tests.awssdk.TestELBVPC"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCAssociationManagement"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCAttributeManagement"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCDefaultVPC"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCManagement"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCNetworkAclEntryManagement"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCNetworkInterfaces"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCSubnetAvailableAddresses"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestEC2VPCValidation"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestELBDefaultVPC"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestELBVPC"/>
         </classes>
     </test>
 </suite>

@@ -3,12 +3,12 @@
 <suite name="ELB Test Suite">
     <test name="ELB_Tests">
         <classes>
-            <class name="com.eucalyptus.tests.awssdk.TestAutoScalingELBAddRemoveInstances"/>
-            <class name="com.eucalyptus.tests.awssdk.TestAutoScalingELBInstanceHealthMonitoring"/>
-            <class name="com.eucalyptus.tests.awssdk.TestAutoScalingELBReferenceValidation"/>
-            <class name="com.eucalyptus.tests.awssdk.TestELBAttributes"/>
-            <class name="com.eucalyptus.tests.awssdk.TestELBIAMResource"/>
-            <class name="com.eucalyptus.tests.awssdk.TestELBTagging"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestAutoScalingELBAddRemoveInstances"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestAutoScalingELBInstanceHealthMonitoring"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestAutoScalingELBReferenceValidation"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestELBAttributes"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestELBIAMResource"/>
+            <class name="src.main.java.com.eucalyptus.tests.awssdk.TestELBTagging"/>
         </classes>>
     </test>
 </suite>

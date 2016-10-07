@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.cloudwatch.model.AlarmHistoryItem;
 import com.amazonaws.services.cloudwatch.model.DescribeAlarmHistoryRequest;
@@ -9,8 +9,8 @@ import org.testng.annotations.Test;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 
-import static com.eucalyptus.tests.awssdk.N4j.cw;
-import static com.eucalyptus.tests.awssdk.N4j.getCloudInfo;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.cw;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.getCloudInfo;
 
 public class CloudWatchDescribeAlarmHistoryTest {
     @Test

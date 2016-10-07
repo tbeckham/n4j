@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk
+package src.main.java.com.eucalyptus.tests.awssdk
 
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.auth.AWSCredentials
@@ -20,6 +20,10 @@ import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest
 import com.amazonaws.services.identitymanagement.model.RemoveClientIDFromOpenIDConnectProviderRequest
 import com.amazonaws.services.identitymanagement.model.UpdateOpenIDConnectProviderThumbprintRequest
 import org.testng.annotations.Test
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.minimalInit
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
 
 /**
  * Tests functionality for IAM OpenID Connect providers.
@@ -36,11 +40,15 @@ import org.testng.annotations.Test
  *   
  */
 class TestIAMOpenIDConnectProviders {
-  
-  private final String host = '10.X.Y.Z'
 
-  private final AWSCredentialsProvider credentials =
-      new StaticCredentialsProvider( new BasicAWSCredentials( 'AKI...', '...' ) )
+  public TestIAMOpenIDConnectProviders( ) {
+    minimalInit()
+    this.host = CLC_IP
+    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+  }
+  private final String host
+
+  private final AWSCredentialsProvider credentials
 
   private String cloudUri( String host, String servicePath ) {
     URI.create( "http://${host}:8773/" )

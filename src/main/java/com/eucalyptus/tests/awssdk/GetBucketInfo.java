@@ -1,4 +1,4 @@
-package com.eucalyptus.tests.awssdk;
+package src.main.java.com.eucalyptus.tests.awssdk;
 
 /**
  * Created by tony on 7/28/14.
@@ -8,8 +8,8 @@ import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.Grant;
 
-import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
-import static com.eucalyptus.tests.awssdk.N4j.s3;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.initS3Client;
+import static src.main.java.com.eucalyptus.tests.awssdk.N4j.s3;
 
 
 public class GetBucketInfo {
