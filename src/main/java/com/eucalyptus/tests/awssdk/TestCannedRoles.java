@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWSCredentials;
@@ -53,8 +53,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.youAre;
+import static com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.youAre;
 
 /**
  * This test verifies the functionality of https://eucalyptus.atlassian.net/browse/EUCA-8156, EUCA-8157, and EUCA-8158

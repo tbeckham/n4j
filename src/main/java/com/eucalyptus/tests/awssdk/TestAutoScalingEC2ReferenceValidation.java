@@ -18,7 +18,7 @@
  * additional information or have any questions.
  ************************************************************************/
 
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.AmazonServiceException;
 import org.testng.annotations.Test;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * This application tests reference validation for launch configurations and

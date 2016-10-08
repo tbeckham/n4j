@@ -18,9 +18,9 @@
  * additional information or have any questions.
  ************************************************************************/
 
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 import java.util.ArrayList;
 import java.util.List;

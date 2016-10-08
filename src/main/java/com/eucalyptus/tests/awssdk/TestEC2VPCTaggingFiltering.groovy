@@ -1,4 +1,4 @@
-package src.main.java.com.eucalyptus.tests.awssdk
+package com.eucalyptus.tests.awssdk
 
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials

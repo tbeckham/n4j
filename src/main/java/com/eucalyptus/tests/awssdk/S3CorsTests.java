@@ -1,16 +1,16 @@
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 //LPT To switch between testing against Eucalyptus and AWS,
 //LPT (un)comment the code identified by LPTEuca and LPTAWS.
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.print;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.testInfo;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.eucaUUID;
+import static com.eucalyptus.tests.awssdk.N4j.print;
+import static com.eucalyptus.tests.awssdk.N4j.testInfo;
+import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
 
 //LPT OK to leave both imports uncommented.
 //LPTEuca The below import is only needed for running against Eucalyptus
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
+import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
 //LPTAWS The below import is only needed for running against AWS
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.initS3Client;
+import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
 
 import static org.testng.AssertJUnit.assertTrue;
 
