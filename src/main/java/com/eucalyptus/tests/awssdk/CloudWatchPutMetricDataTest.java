@@ -1,4 +1,4 @@
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.MetricDatum;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 public class CloudWatchPutMetricDataTest {
     @Test

@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * This tests EC2 RunInstances using with instance profiles.

@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -48,10 +48,10 @@ import com.github.sjones4.youcan.youtoken.model.GetImpersonationTokenRequest;
 import com.github.sjones4.youcan.youtoken.model.GetImpersonationTokenResult;
 import org.testng.annotations.Test;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.minimalInit;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY;
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY;
+import static com.eucalyptus.tests.awssdk.N4j.minimalInit;
+import static com.eucalyptus.tests.awssdk.N4j.CLC_IP;
+import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY;
+import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY;
 /**
  * This application tests getting an impersonation token using STS and consuming EC2 with the creds.
  *

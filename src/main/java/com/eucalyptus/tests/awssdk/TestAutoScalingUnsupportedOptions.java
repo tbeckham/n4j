@@ -17,7 +17,7 @@
  * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
  * additional information or have any questions.
  ************************************************************************/
-package src.main.java.com.eucalyptus.tests.awssdk;
+package com.eucalyptus.tests.awssdk;
 
 import org.testng.annotations.Test;
 
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 
 /**
  * This application tests unsupported options for auto scaling.
