@@ -4,3 +4,7 @@ build/
 dependencies/
 eutester4j_results/
 test-output/
+n4j_results/
+*.iml
+zerofile
+euca-admin.ini
