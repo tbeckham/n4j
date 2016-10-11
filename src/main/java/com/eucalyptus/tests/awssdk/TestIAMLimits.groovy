@@ -35,7 +35,7 @@ import com.amazonaws.services.identitymanagement.model.DeleteUserRequest
 import com.amazonaws.services.identitymanagement.model.NoSuchEntityException
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.*;
+import static com.eucalyptus.tests.awssdk.N4j.*;
 import org.testng.annotations.Test;
 
 /**

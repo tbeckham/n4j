@@ -13,10 +13,10 @@ import com.github.sjones4.youcan.youare.model.CreateAccountRequest
 import com.github.sjones4.youcan.youare.model.DeleteAccountRequest
 import com.github.sjones4.youcan.youare.model.PutAccountPolicyRequest
 import org.testng.annotations.Test
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.minimalInit
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+import static com.eucalyptus.tests.awssdk.N4j.minimalInit
+import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
 
 /**
  * Tests administrative functionality for IAM OpenID Connect providers.

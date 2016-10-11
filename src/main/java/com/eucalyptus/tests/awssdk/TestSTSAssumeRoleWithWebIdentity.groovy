@@ -40,10 +40,10 @@ import com.github.sjones4.youcan.youprop.model.ModifyPropertyValueRequest
 import org.testng.annotations.AfterClass
 import org.testng.annotations.Test
 
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.getCloudInfo
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.CLC_IP
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
-import static src.main.java.com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+import static com.eucalyptus.tests.awssdk.N4j.getCloudInfo
+import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
+import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
 
 
 import javax.net.ssl.HttpsURLConnection
