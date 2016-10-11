@@ -71,7 +71,7 @@ public class TestSTSAssumeRole {
         final String user = NAME_PREFIX + "user";
         final String account = NAME_PREFIX + "account";
 
-        final List<Runnable> cleanupTasks = new ArrayList<Runnable>();
+        final List<Runnable> cleanupTasks = new ArrayList<>();
         try {
             // Create role to get a client id
             final String accountId;
@@ -86,13 +86,10 @@ public class TestSTSAssumeRole {
             final YouAreClient youAre = new YouAreClient(awsCredentialsProvider);
             youAre.setEndpoint(IAM_ENDPOINT);
 
-            cleanupTasks.add(new Runnable() {
-                @Override
-                public void run() {
-                    print("Deleting account " + account);
-                    deleteAccount(account);
-                }
-            });
+            cleanupTasks.add( () -> {
+                print("Deleting account " + account);
+                deleteAccount(account);
+            } );
 
             final GetUserResult userResult = youAre.getUser(new GetUserRequest());
             assertThat(userResult.getUser() != null, "Expected current user info");
@@ -121,14 +118,11 @@ public class TestSTSAssumeRole {
                                         "      }" +
                                         "    } ]\n" +
                                         "}"));
-                cleanupTasks.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        print("Deleting role: " + roleNameA);
-                        youAre.deleteRole(new DeleteRoleRequest()
-                                .withRoleName(roleNameA));
-                    }
-                });
+                cleanupTasks.add( () -> {
+                    print("Deleting role: " + roleNameA);
+                    youAre.deleteRole(new DeleteRoleRequest()
+                            .withRoleName(roleNameA));
+                } );
                 assertThat(roleResult.getRole() != null, "Expected role");
                 assertThat(roleResult.getRole().getArn() != null, "Expected role ARN");
                 assertThat(roleResult.getRole().getArn().length() > 25, "Expected role ARN length to exceed 25 characters");
@@ -160,14 +154,11 @@ public class TestSTSAssumeRole {
                                     "      }" +
                                     "    } ]\n" +
                                     "}"));
-            cleanupTasks.add(new Runnable() {
-                @Override
-                public void run() {
-                    print("Deleting role: " + roleName);
-                    youAre.deleteRole(new DeleteRoleRequest()
-                            .withRoleName(roleName));
-                }
-            });
+            cleanupTasks.add( () -> {
+                print("Deleting role: " + roleName);
+                youAre.deleteRole(new DeleteRoleRequest()
+                        .withRoleName(roleName));
+            } );
 
             // Get role info
             print("Getting role: " + roleName);
@@ -208,13 +199,10 @@ public class TestSTSAssumeRole {
                                     "      \"Resource\":\"*\"\n" +
                                     "   }]\n" +
                                     "}"));
-            cleanupTasks.add(new Runnable() {
-                @Override
-                public void run() {
-                    print("Removing policy: " + policyName + ", from role: " + roleName);
-                    youAre.deleteRolePolicy(new DeleteRolePolicyRequest().withRoleName(roleName).withPolicyName(policyName));
-                }
-            });
+            cleanupTasks.add( () -> {
+                print("Removing policy: " + policyName + ", from role: " + roleName);
+                youAre.deleteRolePolicy(new DeleteRolePolicyRequest().withRoleName(roleName).withPolicyName(policyName));
+            } );
 
             // Describe images using role
             {
@@ -250,7 +238,7 @@ public class TestSTSAssumeRole {
             {
                 print("Testing get caller identity for role credentials");
                 final String roleSessionName = "this-is-the-session-name";
-                final String assumedRoleArn = "arn:aws:sts::"+accountId+":assumed-role/" + roleSessionName;
+                final String assumedRoleArn = "arn:aws:sts::"+accountId+":assumed-role/path/" + roleName + "/" + roleSessionName;
                 final String assumedRoleId = roleId + ":" + roleSessionName;
                 print("Expected assumed role arn : " + assumedRoleArn );
                 print("Expected assumed role id  : " + assumedRoleId );
