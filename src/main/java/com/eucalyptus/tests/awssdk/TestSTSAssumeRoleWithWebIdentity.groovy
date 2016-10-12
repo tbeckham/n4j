@@ -8,8 +8,6 @@ import com.amazonaws.auth.AnonymousAWSCredentials
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.auth.BasicSessionCredentials
 import com.amazonaws.internal.StaticCredentialsProvider
-import com.amazonaws.regions.Region
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest
@@ -44,6 +42,7 @@ import static com.eucalyptus.tests.awssdk.N4j.getCloudInfo
 import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
 import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
 import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+import static com.eucalyptus.tests.awssdk.N4j.NAME_PREFIX
 
 
 import javax.net.ssl.HttpsURLConnection
@@ -75,49 +74,15 @@ import java.security.spec.RSAPrivateKeySpec
  */
 class TestSTSAssumeRoleWithWebIdentity {
 
-  public TestSTSAssumeRoleWithWebIdentity( ) {
-    getCloudInfo()
-    this.host = CLC_IP
-    this.adminCredentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
-
-    // create a new user with all IAM permissions
-    N4j.createAccount(testAcct)
-    N4j.createUser(testAcct,testUser)
-    N4j.createIAMPolicy(testAcct,testUser, "allow-all",null)
-    AWSCredentials userCreds = N4j.getUserCreds(testAcct, testUser)
-    def userAK = userCreds.AWSAccessKeyId
-    def userSK = userCreds.AWSSecretKey
-    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( userAK, userSK ) )
-  }
-
-  /**
-   * Called after all the tests in a class
-   *
-   * @throws java.lang.Exception
-   */
-  @AfterClass
-  public void tearDownAfterClass() throws Exception {
-    N4j.deleteAccount(testAcct)
-  }
-
   private final String host
-  private String testAcct= "test-acct"
-  private String testUser= "test-user"
+  private final String path
+  private final String domainAndPort
+  private final String domain
+  private final String thumbprint
+  private final String testAcct
+  private final String testUser
   private final AWSCredentialsProvider credentials
   private final AWSCredentialsProvider adminCredentials
-
-  // configurable / detected values
-  private final Region region = Region.getRegion(Regions.US_WEST_1)
-  private final String path = '/pathhere'
-  private final String domainAndPort = host == null ?
-          's3-us-west-1.amazonaws.com' : // aws s3
-          "s3.${sniffDomain()}:8773".toString()
-  private final String domain = domainAndPort.contains(':') ?
-          domainAndPort.substring(0, domainAndPort.indexOf(':')) :
-          domainAndPort
-  private final String thumbprint = host == null ?
-          'A9D53002E97E00E043244F3D170D6F4C414104FD' : // aws s3
-          sniffThumbprint("https://${domainAndPort}")
 
   // arbitrary values for oidc registration / identity
   private final String aud = 'c6845610-9b57-4386-a1c4-7ffe45d03c92'
@@ -168,10 +133,42 @@ class TestSTSAssumeRoleWithWebIdentity {
       79
     '''.stripIndent()
   private final byte[] modulusBytes =
-          new BigInteger(modulus.replace(':', '').replace('\n', ''), 16).toByteArray()
+      new BigInteger(modulus.replace(':', '').replace('\n', ''), 16).toByteArray()
   private final byte[] privateExponentBytes =
-          new BigInteger(privateExponent.replace(':', '').replace('\n', ''), 16).toByteArray()
+      new BigInteger(privateExponent.replace(':', '').replace('\n', ''), 16).toByteArray()
 
+  public TestSTSAssumeRoleWithWebIdentity( ) {
+    getCloudInfo( )
+
+    this.adminCredentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+    testAcct= "${NAME_PREFIX}test-acct"
+    testUser= "${NAME_PREFIX}test-user"
+
+    // create a new user with all IAM permissions
+    N4j.createAccount(testAcct)
+    N4j.createUser(testAcct,testUser)
+    N4j.createIAMPolicy(testAcct,testUser, "allow-all",null)
+    this.credentials = new StaticCredentialsProvider( N4j.getUserCreds(testAcct, testUser) )
+
+    // configurable / detected values
+    host = CLC_IP
+    path = '/pathhere'
+    domainAndPort = "s3.${sniffDomain()}:8773".toString( )
+    domain = domainAndPort.contains(':') ?
+        domainAndPort.substring(0, domainAndPort.indexOf(':')) :
+        domainAndPort
+    thumbprint = sniffThumbprint("https://${domainAndPort}")
+  }
+
+  /**
+   * Called after all the tests in a class
+   *
+   * @throws java.lang.Exception
+   */
+  @AfterClass
+  public void tearDownAfterClass() throws Exception {
+    N4j.deleteAccount(testAcct)
+  }
 
   private String cloudUri(String servicePath) {
     URI.create("http://${host}:8773/")
@@ -181,57 +178,37 @@ class TestSTSAssumeRoleWithWebIdentity {
 
   private AWSSecurityTokenService getStsClient() {
     final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient(new AnonymousAWSCredentials())
-    if (host) { // qa
-      sts.setEndpoint(cloudUri('/services/Tokens'))
-    } else { // aws
-      if (region) sts.setRegion(region)
-    }
+    sts.setEndpoint(cloudUri('/services/Tokens'))
     sts
   }
 
   private AmazonS3 getS3Client(final AWSCredentialsProvider credentials) {
     final AmazonS3 s3 = new AmazonS3Client(credentials, new ClientConfiguration(signerOverride: 'S3SignerType'))
-    if (host) { // qa
-      s3.setS3ClientOptions(new S3ClientOptions(pathStyleAccess: true))
-      s3.setEndpoint(cloudUri("/services/objectstorage"))
-    } else { // aws
-      if (region) s3.setRegion(region)
-    }
+    s3.setS3ClientOptions(new S3ClientOptions(pathStyleAccess: true))
+    s3.setEndpoint(cloudUri("/services/objectstorage"))
     s3
   }
 
   private AmazonIdentityManagement getIamClient(final AWSCredentialsProvider credentials) {
     final AmazonIdentityManagement iam = new AmazonIdentityManagementClient(credentials)
-    if (host) { // qa
-      iam.setEndpoint(cloudUri('/services/Euare'))
-    } else { // aws
-      // no region for iam
-    }
+    iam.setEndpoint(cloudUri('/services/Euare'))
     iam
   }
 
   private AmazonEC2 getEC2Client(final AWSCredentialsProvider credentials) {
     final AmazonEC2 ec2 = new AmazonEC2Client(credentials)
-    if (host) { // qa
-      ec2.setEndpoint(cloudUri("/services/compute"))
-    } else { // aws
-      if (region) ec2.setRegion(region)
-    }
+    ec2.setEndpoint(cloudUri("/services/compute"))
     ec2
   }
 
   private YouProp getYouPropClient(final AWSCredentialsProvider credentials) {
-    if (host) {
-      new YouPropClient(credentials).with {
-        setEndpoint(cloudUri("/services/Properties"))
-        it
-      }
-    } else {
-      null
+    new YouPropClient(credentials).with {
+      setEndpoint(cloudUri("/services/Properties"))
+      it
     }
   }
 
-  private String sniffDomain() {
+  private String sniffDomain( ) {
     getYouPropClient(adminCredentials)?.with {
       describeProperties(new DescribePropertiesRequest(
               properties: ['system.dns.dnsdomain']
@@ -270,8 +247,8 @@ class TestSTSAssumeRoleWithWebIdentity {
   }
 
   @Test
-  public void test( ) throws Exception {
-    final String namePrefix = UUID.randomUUID().toString() + "-"
+  public void testAssumeRoleWithWebIdentity( ) throws Exception {
+    final String namePrefix = NAME_PREFIX
     N4j.print( "Using resource prefix for test: ${namePrefix}" )
 
     final List<Runnable> cleanupTasks = [] as List<Runnable>
