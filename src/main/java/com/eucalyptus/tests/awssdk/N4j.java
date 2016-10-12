@@ -47,8 +47,8 @@ import java.util.concurrent.TimeUnit;
 
 class N4j {
     static String CLC_IP = System.getProperty("clcip");
-    static String USER = System.getProperty("user");
-    static String PASSWORD = System.getProperty("password");
+    static String USER = System.getProperty("user", "root");
+    static String PASSWORD = System.getProperty("password", "foobar");
     static String endpointFile = System.getProperty("endpoints");
     static String LOCAL_INI_FILE = System.getProperty("inifile", "euca-admin.ini");
     static String REMOTE_INI_FILE ="/root/.euca/euca-admin.ini";
@@ -147,7 +147,7 @@ class N4j {
 
         print("S3 Discovery Complete");
     }
-    
+
 	public static AmazonS3 initS3ClientWithNewAccount(String account, String user) throws Exception {
 
 		// Initialize everything for the first time
@@ -197,7 +197,7 @@ class N4j {
         ACCESS_KEY = getAttribute(LOCAL_INI_FILE, "key-id");
         print("Cloud Discovery Complete");
     }
-    
+
 
     public static void testInfo(String testName) {
         print("*****TEST NAME: " + testName);
