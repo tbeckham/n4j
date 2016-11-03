@@ -199,7 +199,7 @@ public class S3CorsTests {
    * Test getting, setting, verifying, and deleting
    * rules for Cross-Origin Resource Sharing (CORS) on a bucket.
    */
-//  @Test
+  @Test
   public void testCorsConfigMgmt() throws Exception {
     testInfo(this.getClass().getSimpleName() + " - testCorsConfigMgmt");
 
