@@ -4,6 +4,7 @@ package com.eucalyptus.tests.awssdk;
 //LPT (un)comment the code identified by LPTEuca and LPTAWS.
 import static com.eucalyptus.tests.awssdk.N4j.print;
 import static com.eucalyptus.tests.awssdk.N4j.testInfo;
+import static com.eucalyptus.tests.awssdk.N4j.assertThat;
 import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
 
 //LPT OK to leave both imports uncommented.
@@ -14,9 +15,13 @@ import static com.eucalyptus.tests.awssdk.N4j.initS3Client;
 
 import static org.testng.AssertJUnit.assertTrue;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -25,12 +30,20 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.Request;
+import com.amazonaws.Response;
+import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
 import com.amazonaws.services.s3.model.CORSRule;
 import com.amazonaws.services.s3.model.CORSRule.AllowedMethods;
-import com.amazonaws.services.s3.model.Owner;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.HeadBucketRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 
 /**
  * <p>
@@ -50,10 +63,36 @@ public class S3CorsTests {
   //LPTAWS Next line only needed for AWS, OK to leave uncommented.
   private static AmazonS3 s3 = null;
   private static String account = null;
-  private static Owner owner = null;
-  private static String ownerName = null;
-  private static String ownerId = null;
+  private static String requestOrigin = null;
+  private static Map<String,String> responseHeaders = null;
+  
+  private static final int NUM_CONFIG_RULES = 4;
+  private static final int MAX_AGE_SECONDS = 3000;
+  
+  private static final AllowedMethods[][] RULE_METHODS = {
+      //Rule 1
+      {AllowedMethods.PUT, AllowedMethods.POST, AllowedMethods.DELETE},
+      //Rule 2
+      {AllowedMethods.GET},
+      //Rule 3
+      {AllowedMethods.HEAD},
+      //Rule 4
+      {AllowedMethods.GET, AllowedMethods.HEAD, AllowedMethods.PUT, AllowedMethods.POST, AllowedMethods.DELETE}
+  };
+  
+  private static final String[] RULE_4_EXPOSE_HEADERS = 
+    {"x-amz-server-side-encryption", "x-amz-request-id", "x-amz-id-2"};
+      
+  private static final String[] VARY_HEADERS = 
+    {"Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"};
 
+  private static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+  private static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
+  private static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+  private static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
+  private static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+  private static final String VARY = "Vary";
+      
   @BeforeClass
   public void init() throws Exception {
     print("### PRE SUITE SETUP - " + this.getClass().getSimpleName());
@@ -71,10 +110,6 @@ public class S3CorsTests {
       }
       throw e;
     }
-
-    owner = s3.getS3AccountOwner();
-    ownerName = owner.getDisplayName();
-    ownerId = owner.getId();   
   }
 
   @AfterClass
@@ -116,8 +151,6 @@ public class S3CorsTests {
     }
   }
 
-  private int NUM_CONFIG_RULES = 4;
-  
   private static BucketCrossOriginConfiguration createCorsConfig() {
     /**
      * Create a CORS configuration of several rules, based on the examples in:
@@ -128,23 +161,20 @@ public class S3CorsTests {
     CORSRule corsRuleExample1Writes = new CORSRule();
     corsRuleExample1Writes.setId("Rule 1: Origin example1 can write, with all headers allowed");
     corsRuleExample1Writes.setAllowedOrigins("http://www.example1.com");
-    corsRuleExample1Writes.setAllowedMethods(
-        AllowedMethods.PUT, 
-        AllowedMethods.POST, 
-        AllowedMethods.DELETE);
+    corsRuleExample1Writes.setAllowedMethods(Arrays.asList(RULE_METHODS[0]));
     corsRuleExample1Writes.setAllowedHeaders("*");
     corsRuleListCreated.add(corsRuleExample1Writes);
 
     CORSRule corsRuleExample2Reads = new CORSRule();
     corsRuleExample2Reads.setId("Rule 2: Origin example2 can GET only");
     corsRuleExample2Reads.setAllowedOrigins("http://www.example2.com");
-    corsRuleExample2Reads.setAllowedMethods(AllowedMethods.GET);
+    corsRuleExample2Reads.setAllowedMethods(Arrays.asList(RULE_METHODS[1]));
     corsRuleListCreated.add(corsRuleExample2Reads);
 
     CORSRule corsRuleAnyHeads = new CORSRule();
     corsRuleAnyHeads.setId("Rule 3: Any origin can HEAD");
     corsRuleAnyHeads.setAllowedOrigins("*");
-    corsRuleAnyHeads.setAllowedMethods(AllowedMethods.HEAD);
+    corsRuleAnyHeads.setAllowedMethods(Arrays.asList(RULE_METHODS[2]));
     corsRuleListCreated.add(corsRuleAnyHeads);
 
     CORSRule corsRuleComplex = new CORSRule();
@@ -154,20 +184,12 @@ public class S3CorsTests {
         "can only send request headers that begin x-amz- or Content-, " +
         "and can expose the listed ExposeHeaders to clients.");
     corsRuleComplex.setAllowedOrigins("http://www.corstest*.com", "http://*.sample.com");
-    corsRuleComplex.setAllowedMethods(
-        AllowedMethods.GET,
-        AllowedMethods.HEAD,
-        AllowedMethods.PUT, 
-        AllowedMethods.POST, 
-        AllowedMethods.DELETE);
-    corsRuleComplex.setMaxAgeSeconds(3000);
+    corsRuleComplex.setAllowedMethods(Arrays.asList(RULE_METHODS[3]));
+    corsRuleComplex.setMaxAgeSeconds(MAX_AGE_SECONDS);
     corsRuleComplex.setAllowedHeaders(
         "x-amz-*", 
         "Content-*");
-    corsRuleComplex.setExposedHeaders(
-        "x-amz-server-side-encryption",
-        "x-amz-request-id",
-        "x-amz-id-2");
+    corsRuleComplex.setExposedHeaders(Arrays.asList(RULE_4_EXPOSE_HEADERS));
     corsRuleListCreated.add(corsRuleComplex);
 
     return new BucketCrossOriginConfiguration(corsRuleListCreated);
@@ -177,7 +199,7 @@ public class S3CorsTests {
    * Test getting, setting, verifying, and deleting
    * rules for Cross-Origin Resource Sharing (CORS) on a bucket.
    */
-  @Test
+//  @Test
   public void testCorsConfigMgmt() throws Exception {
     testInfo(this.getClass().getSimpleName() + " - testCorsConfigMgmt");
 
@@ -190,7 +212,7 @@ public class S3CorsTests {
           corsConfig == null || corsConfig.getRules().size() == 0);
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to get the empty bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException trying to get the empty bucket CORS config: " + ase.getMessage());
     }
 
     try {
@@ -200,7 +222,7 @@ public class S3CorsTests {
       
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to set the bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException trying to set the bucket CORS config: " + ase.getMessage());
     }
 
     try {
@@ -250,28 +272,23 @@ public class S3CorsTests {
 
           int maxAgeReceived = corsRuleRetrieved.getMaxAgeSeconds();
           assertTrue("Max Age in Seconds is unexpected: " + maxAgeReceived,
-              maxAgeReceived == 3000);
+              maxAgeReceived == MAX_AGE_SECONDS);
 
           List<String> allowedHeadersReceived = corsRuleRetrieved.getAllowedHeaders();
           assertTrue("Allowed Headers is unexpected: " + allowedHeadersReceived, 
               allowedHeadersReceived != null && allowedHeadersReceived.size() == 2 &&
               allowedHeadersReceived.get(0).equals("x-amz-*"));
 
-          ArrayList<String> exposedHeadersExpected = new ArrayList<String>(3);
-          exposedHeadersExpected.add("x-amz-server-side-encryption");
-          exposedHeadersExpected.add("x-amz-request-id");
-          exposedHeadersExpected.add("x-amz-id-2");
           List<String> exposedHeadersReceived = corsRuleRetrieved.getExposedHeaders();
           assertTrue("Exposed Headers is unexpected: " + exposedHeadersReceived, 
               exposedHeadersReceived != null && 
-              exposedHeadersReceived.size() == exposedHeadersExpected.size() &&
-              exposedHeadersReceived.containsAll(exposedHeadersExpected));
+              exposedHeadersReceived.equals(Arrays.asList(RULE_4_EXPOSE_HEADERS)));
           } //end if this is the rule we validate
       } //end for all rules retrieved
       assertTrue("Did not find the complex CORS rule to validate in the retrieved CORS config.", ruleFound);
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to get the bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException trying to get the bucket CORS config: " + ase.getMessage());
     }
 
     try {
@@ -279,7 +296,7 @@ public class S3CorsTests {
       s3.deleteBucketCrossOriginConfiguration(bucketName);
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to delete the bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException trying to delete the bucket CORS config: " + ase.getMessage());
     }
 
     try {
@@ -291,10 +308,114 @@ public class S3CorsTests {
           corsConfig == null || corsConfig.getRules().size() == 0);
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to get the empty (deleted) bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException trying to get the empty (deleted) bucket CORS config: " + ase.getMessage());
     }
 
   }  // end testCorsConfigMgmt()
+  
+  private static boolean equalsStrings(String one, String two) {
+    if (one == null) {
+      if (two != null)  return false;
+    } else {
+      if (!one.equals(two))  return false;
+    }
+    return true;
+  }
+  
+  private static boolean equalsTrimmed(String one, AllowedMethods[] twoArray) {
+    if (one == null && twoArray == null)  return true;
+    if (one == null || twoArray == null)  return false;
+    String[] oneArray = one.split(","); 
+    if (oneArray.length != twoArray.length)  return false;
+    for (int i = 0; i < oneArray.length; i++) {
+      if (!oneArray[i].trim().equals(twoArray[i].toString().trim()))  return false;
+    }
+    return true;
+  }
+  
+  private static boolean equalsTrimmed(String one, String[] twoArray) {
+    if (one == null && twoArray == null)  return true;
+    if (one == null || twoArray == null)  return false;
+    String[] oneArray = one.split(","); 
+    if (oneArray.length != twoArray.length)  return false;
+    for (int i = 0; i < oneArray.length; i++) {
+      if (!oneArray[i].trim().equals(twoArray[i].trim()))  return false;
+    }
+    return true;
+  }
+  
+  private static String showCorsResponseHeaders() {
+    return ("\nCORS-specific response headers:\n" +
+        "Access-Control-Allow-Origin: '" + responseHeaders.get(ACCESS_CONTROL_ALLOW_ORIGIN) + "'\n" +
+        "Access-Control-Allow-Methods: '" + responseHeaders.get(ACCESS_CONTROL_ALLOW_METHODS) + "'\n" +
+        "Access-Control-Expose-Headers: '" + responseHeaders.get(ACCESS_CONTROL_EXPOSE_HEADERS) + "'\n" +
+        "Access-Control-Max-Age: '" + responseHeaders.get(ACCESS_CONTROL_MAX_AGE) + "'\n" +
+        "Access-Control-Allow-Credentials: '" + responseHeaders.get(ACCESS_CONTROL_ALLOW_CREDENTIALS) + "'\n" +
+        "Vary: '" + responseHeaders.get(VARY) + "'\n");
+  }
+  
+  private static boolean verifyNoCorsResponseHeaders() {
+    return verifyValidCorsResponseHeaders(null, null, null, null, null, null);
+  }
+  
+  private static boolean verifyValidCorsResponseHeaders(
+      String expectedAllowOrigin,
+      AllowedMethods[] expectedAllowMethodsArray,
+      String[] expectedExposeHeadersArray,
+      String expectedMaxAge,
+      String expectedAllowCredentials,
+      String[] expectedVary) {
+
+    if (responseHeaders == null) {
+      if (expectedAllowOrigin != null ||
+          expectedAllowMethodsArray != null ||
+          expectedExposeHeadersArray != null ||
+          expectedMaxAge != null ||
+          expectedAllowCredentials != null ||
+          expectedVary != null) {
+        assertThat(false, "No CORS response headers, and some were expected");
+      }
+    }
+
+    String responseAllowOrigin = responseHeaders.get(ACCESS_CONTROL_ALLOW_ORIGIN);
+    if (!equalsStrings(responseAllowOrigin, expectedAllowOrigin)) {
+
+      assertThat(false, ACCESS_CONTROL_ALLOW_ORIGIN + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    String responseAllowMethods = responseHeaders.get(ACCESS_CONTROL_ALLOW_METHODS);
+    if (!equalsTrimmed(responseAllowMethods, expectedAllowMethodsArray)) {
+      assertThat(false, ACCESS_CONTROL_ALLOW_METHODS + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    String responseExposeHeaders = responseHeaders.get(ACCESS_CONTROL_EXPOSE_HEADERS);
+    if (!equalsTrimmed(responseExposeHeaders, expectedExposeHeadersArray)) {
+      assertThat(false, ACCESS_CONTROL_EXPOSE_HEADERS + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    String responseMaxAge = responseHeaders.get(ACCESS_CONTROL_MAX_AGE);
+    if (!equalsStrings(responseMaxAge, expectedMaxAge)) {
+      assertThat(false, ACCESS_CONTROL_MAX_AGE + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    String responseAllowCredentials = responseHeaders.get(ACCESS_CONTROL_ALLOW_CREDENTIALS);
+    if (!equalsStrings(responseAllowCredentials, expectedAllowCredentials)) {
+      assertThat(false, ACCESS_CONTROL_ALLOW_CREDENTIALS + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    String responseVary = responseHeaders.get(VARY);
+    if (!equalsTrimmed(responseVary, expectedVary)) {
+      assertThat(false, VARY + 
+          " in response header was unexpected." + showCorsResponseHeaders());
+    }
+
+    return true;
+  }
   
   
   /**
@@ -307,15 +428,149 @@ public class S3CorsTests {
   public void testCorsRequests() throws Exception {
     testInfo(this.getClass().getSimpleName() + " - testCorsRequests");
 
+    RequestHandler2 corsHeadersHandler = new RequestHandler2() {
+      public void beforeRequest(final Request<?> request) {
+        request.getOriginalRequest().putCustomRequestHeader("Origin", requestOrigin);
+      }
+      public void afterResponse(final Request<?> request, final Response<?> response) {
+        responseHeaders = response.getHttpResponse().getHeaders();
+      }
+    };
+
+    String testAction = null;
     try {
-      print(account + ": Setting bucket CORS config for " + bucketName);
+      ((AmazonS3Client) s3).addRequestHandler(corsHeadersHandler);
+
+      // Put an object with an Origin header but no CORS config defined yet.
+      // Shouldn't get any CORS-specific response headers.
+      requestOrigin = "http://www.example1.com";
+      String filename = "3wolfmoon-download.jpg";
+      File fileToPut = new File(filename);
+      final String key = eucaUUID();
+      testAction = "Putting object " + filename + " as key " + key + " in bucket " + bucketName;
+      print(account + ": " + testAction);
+      s3.putObject(new PutObjectRequest(bucketName, key, fileToPut));
+      cleanupTasks.add(new Runnable() {
+        @Override
+        public void run() {
+          print(account + ": Deleting object " + key);
+          s3.deleteObject(bucketName, key);
+        }
+      });
+      verifyNoCorsResponseHeaders();
+
+      // Put the CORS configuration on the bucket.
+      // No Origin, thus shouldn't get any CORS headers
+      testAction = "Setting the bucket CORS config on bucket " + bucketName;
+      requestOrigin = null;
+      print(account + ": " + testAction);
       BucketCrossOriginConfiguration corsConfigCreated = createCorsConfig();
       s3.setBucketCrossOriginConfiguration(bucketName, corsConfigCreated);
+      verifyNoCorsResponseHeaders();
+
+      // Get the object, matching Rule 2
+      requestOrigin = "http://www.example2.com";
+      testAction = "Getting the object " + key + " from bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      final String destFilename1 = key + '_' + eucaUUID();
+      s3.getObject(new GetObjectRequest(bucketName, key), new File(destFilename1));
+      cleanupTasks.add(new Runnable() {
+        @Override
+        public void run() {
+          print(account + ": Deleting file " + destFilename1);
+          new File(destFilename1).delete();
+        }
+      });
+      verifyValidCorsResponseHeaders(requestOrigin, RULE_METHODS[1], /*exposeHeaders*/ null,
+          /*max age*/ null, /*allow creds*/ "true", VARY_HEADERS);
+      
+      // Get the object, matching Rule 4
+      requestOrigin = "http://www.sample.com";
+      testAction = "Getting the object " + key + " from bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      final String destFilename2 = key + '_' + eucaUUID();
+      s3.getObject(new GetObjectRequest(bucketName, key), new File(destFilename2));
+      cleanupTasks.add(new Runnable() {
+        @Override
+        public void run() {
+          print(account + ": Deleting file " + destFilename2);
+          new File(destFilename2).delete();
+        }
+      });
+      verifyValidCorsResponseHeaders(requestOrigin, RULE_METHODS[3], RULE_4_EXPOSE_HEADERS,
+          String.valueOf(MAX_AGE_SECONDS), /*allow creds*/ "true", VARY_HEADERS);
+      
+      // Head the bucket, matching Rule 3
+      requestOrigin = "http://www.sample.com";
+      testAction = "Getting the object " + key + " from bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      s3.headBucket(new HeadBucketRequest(bucketName));
+      verifyValidCorsResponseHeaders(/*origin*/ "*", RULE_METHODS[2], /*exposeHeaders*/ null,
+          /*max age*/ null, /*allow creds*/ null, VARY_HEADERS);
+      
+      // List (Get) the bucket's objects, matching Rule 2
+      requestOrigin = "http://www.example2.com";
+      testAction = "Listing the bucket contents for bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      s3.listObjects(new ListObjectsRequest(bucketName, null, null, null, null));
+      verifyValidCorsResponseHeaders(requestOrigin, RULE_METHODS[1], /*exposeHeaders*/ null,
+          /*max age*/ null, /*allow creds*/ "true", VARY_HEADERS);
+      
+      // Get the object, matching Rule 1 origin but Gets not allowed
+      // Negative test, should return no CORS readers
+      // But it will still Get the file! CORS doesn't handle authorization.
+      requestOrigin = "http://www.example1.com";
+      testAction = "Getting the object " + key + " from bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      final String destFilename3 = key + '_' + eucaUUID();
+      s3.getObject(new GetObjectRequest(bucketName, key), new File(destFilename3));
+      cleanupTasks.add(new Runnable() {
+        @Override
+        public void run() {
+          print(account + ": Deleting file " + destFilename3);
+          new File(destFilename3).delete();
+        }
+      });
+      verifyNoCorsResponseHeaders();
+      
+      // Delete the object, matching Rule 2 origin but Deletes not allowed
+      // Negative test, should return no CORS readers
+      // But it will still Delete the file! CORS doesn't handle authorization.
+      requestOrigin = "http://www.example2.com";
+      testAction = "Deleting the object " + key + " from bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      s3.deleteObject(bucketName, key);
+      verifyNoCorsResponseHeaders();
+
+      // Put an object, matching Rule 1
+      requestOrigin = "http://www.example1.com";
+      final String key2 = eucaUUID();
+      testAction = "Putting object " + filename + " as key " + key2 + " in bucket " + bucketName +
+          " as Origin " + requestOrigin;
+      print(account + ": " + testAction);
+      s3.putObject(new PutObjectRequest(bucketName, key2, fileToPut));
+      cleanupTasks.add(new Runnable() {
+        @Override
+        public void run() {
+          print(account + ": Deleting object " + key2);
+          s3.deleteObject(bucketName, key2);
+        }
+      });
+      verifyValidCorsResponseHeaders(requestOrigin, RULE_METHODS[0], /*exposeHeaders*/ null,
+          /*max age*/ null, /*allow creds*/ "true", VARY_HEADERS);
+
+      ((AmazonS3Client) s3).removeRequestHandler(corsHeadersHandler);
+
     } catch (AmazonServiceException ase) {
       printException(ase);
-      assertTrue("Caught AmazonServiceException trying to set the bucket CORS config: " + ase.getMessage(), false);
+      assertThat(false, "Caught AmazonServiceException " + testAction + ": " + ase.getMessage());
     }
-
 
   }  // end testCorsRequests()
   
