@@ -445,8 +445,13 @@ class TestEC2VPCNATGatewayManagement {
               "Expected network interface private IP ${privateIp}, but was: ${networkInterfaces[0].privateIpAddress}" )
           assertThat( networkInterfaces[0].groups == null || networkInterfaces[0].groups.isEmpty( ),
               "Expected no network interface security groups, but was: ${networkInterfaces[0].groups}" )
-          assertThat( networkInterfaces[0].association == null,
-              "Expected no network interface association, but was: ${networkInterfaces[0].association}" )
+          assertThat( networkInterfaces[0].association != null, "Expected network interface association" )
+          networkInterfaces[0].association.with { NetworkInterfaceAssociation niAss ->
+            assertThat( niAss.publicIp == publicIp, "Expected network interface association public ip ${publicIp}, but was: ${niAss.publicIp}" )
+            assertThat( niAss.ipOwnerId != null, "Expected network interface association ip owner id" )
+            assertThat( niAss.allocationId == allocationId, "Expected network interface association allocation identifier ${allocationId}, but was: ${niAss.allocationId}" )
+            assertThat( niAss.associationId != null, "Expected network interface association association identifier" )
+          }
           assertThat( networkInterfaces[0].attachment != null, "Expected network interface attachment" )
           networkInterfaces[0].attachment.with {
             assertThat( attachmentId != null, "Expected network interface attachment attachment identifier" )
