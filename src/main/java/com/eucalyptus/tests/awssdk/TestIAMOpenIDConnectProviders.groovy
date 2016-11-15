@@ -19,11 +19,12 @@ import com.amazonaws.services.identitymanagement.model.NoSuchEntityException
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest
 import com.amazonaws.services.identitymanagement.model.RemoveClientIDFromOpenIDConnectProviderRequest
 import com.amazonaws.services.identitymanagement.model.UpdateOpenIDConnectProviderThumbprintRequest
+import org.testng.annotations.AfterClass
 import org.testng.annotations.Test
-import static com.eucalyptus.tests.awssdk.N4j.minimalInit
+
+import static com.eucalyptus.tests.awssdk.N4j.getCloudInfo
 import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
-import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+import static com.eucalyptus.tests.awssdk.N4j.NAME_PREFIX
 
 /**
  * Tests functionality for IAM OpenID Connect providers.
@@ -37,18 +38,28 @@ import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
  *
  * Related AWS doc:
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
- *   
+ *
  */
 class TestIAMOpenIDConnectProviders {
 
-  public TestIAMOpenIDConnectProviders( ) {
-    minimalInit()
-    this.host = CLC_IP
-    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
-  }
   private final String host
 
   private final AWSCredentialsProvider credentials
+
+  private final String testAcct
+
+  public TestIAMOpenIDConnectProviders( ) {
+    getCloudInfo( )
+    this.host = CLC_IP
+    this.testAcct= "${NAME_PREFIX}oidc-test-acct"
+    N4j.createAccount(testAcct)
+    this.credentials = new StaticCredentialsProvider( N4j.getUserCreds(testAcct, 'admin') )
+  }
+
+  @AfterClass
+  public void tearDownAfterClass() throws Exception {
+    N4j.deleteAccount(testAcct)
+  }
 
   private String cloudUri( String host, String servicePath ) {
     URI.create( "http://${host}:8773/" )
@@ -68,7 +79,7 @@ class TestIAMOpenIDConnectProviders {
   }
 
   @Test
-  public void test( ) throws Exception {
+  public void testOpenIDConnectProviderManagement( ) throws Exception {
     N4j.testInfo( TestIAMOpenIDConnectProviders.simpleName )
     final String namePrefix = UUID.randomUUID().toString().substring(0,8) + "-"
     N4j.print "Using resource prefix for test: ${namePrefix}"
@@ -541,5 +552,5 @@ class TestIAMOpenIDConnectProviders {
         }
       }
     }
-  }  
+  }
 }

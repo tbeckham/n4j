@@ -25,7 +25,6 @@ import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
  *   https://eucalyptus.atlassian.net/browse/EUCA-12744
  */
 class TestIAMOpenIDConnectProviderAdministration {
-  
 
   public TestIAMOpenIDConnectProviderAdministration( ) {
     minimalInit()
@@ -54,7 +53,7 @@ class TestIAMOpenIDConnectProviderAdministration {
   }
 
   @Test
-  public void test( ) throws Exception {
+  public void testOpenIDConnectProviderAdministration( ) throws Exception {
     N4j.testInfo( TestIAMOpenIDConnectProviderAdministration.simpleName )
     final String namePrefix = UUID.randomUUID().toString().substring(0,8) + "-"
     N4j.print "Using resource prefix for test: ${namePrefix}"
@@ -201,5 +200,5 @@ class TestIAMOpenIDConnectProviderAdministration {
         }
       }
     }
-  }  
+  }
 }
