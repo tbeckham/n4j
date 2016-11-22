@@ -79,7 +79,8 @@ public class TestSTSAssumeRole {
             // create non-admin user in non-euca account then get credentials and connection for user
             createAccount(account);
             createUser(account, user);
-            createIAMPolicy(account, user, NAME_PREFIX + "policy", null);
+            createIAMPolicy( account, user, NAME_PREFIX + "policy",
+                "{\"Statement\":[{\"Effect\":\"Allow\",\"Resource\":\"*\",\"Action\":[\"iam:*\"]}]}" );
 
             // get youAre connection for new user
             AWSCredentialsProvider awsCredentialsProvider = new StaticCredentialsProvider(getUserCreds(account,user));
@@ -205,11 +206,26 @@ public class TestSTSAssumeRole {
             } );
 
             // Describe images using role
-            {
+            try {
                 final DescribeImagesResult imagesResult = getImagesUsingRole(account, user, roleName, roleArn, "222222222222");
                 assertThat(imagesResult.getImages().size() > 0, "Image not found when using role");
                 final String imageId = imagesResult.getImages().get(0).getImageId();
                 print("Found image: " + imageId);
+            } catch ( AmazonServiceException e ) {
+                // TODO this catch block can be removed once this test no longer needs to pass against versions < 5.0
+                print( "WARNING" );
+                print( "WARNING: Unexpected exception assuming role with valid external id, assuming pre-5.0 behaviour: " + e);
+                print( "WARNING" );
+                print( "Authorizing actions on all services for user " + user );
+                createIAMPolicy( account, user, NAME_PREFIX + "policy", null );
+                print( "Sleeping to allow policy change to propagate" );
+                N4j.sleep( 5 );
+                {
+                    final DescribeImagesResult imagesResult = getImagesUsingRole(account, user, roleName, roleArn, "222222222222");
+                    assertThat(imagesResult.getImages().size() > 0, "Image not found when using role");
+                    final String imageId = imagesResult.getImages().get(0).getImageId();
+                    print("Found image: " + imageId);
+                }
             }
 
             // Describe images using role with incorrect external id
@@ -220,7 +236,6 @@ public class TestSTSAssumeRole {
             } catch (AmazonServiceException e) {
                 print("Received expected exception: " + e);
             }
-
 
             // Get caller identity using user credentials
             {
