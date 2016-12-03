@@ -2,14 +2,16 @@ package com.eucalyptus.tests.awssdk
 
 import com.amazonaws.AmazonServiceException
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.internal.StaticCredentialsProvider
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient
 import com.amazonaws.services.elasticloadbalancing.model.*
+import org.testng.annotations.AfterClass
 import org.testng.annotations.Test
 
-import static N4j.*
+import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
+import static com.eucalyptus.tests.awssdk.N4j.NAME_PREFIX
+
 
 /**
  * ELB API basic test.
@@ -19,12 +21,20 @@ import static N4j.*
  */
 class TestELBApi {
   private final String host;
-  private final AWSCredentialsProvider credentials;
+  private final String testAcct
+  private final AWSCredentialsProvider testAcctAdminCredentials
 
   public TestELBApi( ) {
-    minimalInit()
+    N4j.getCloudInfo( )
     this.host = CLC_IP
-    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+    this.testAcct= "${NAME_PREFIX}test-acct"
+    N4j.createAccount(testAcct)
+    this.testAcctAdminCredentials = new StaticCredentialsProvider( N4j.getUserCreds(testAcct, 'admin') )
+  }
+
+  @AfterClass
+  public void tearDownAfterClass( ) {
+    N4j.deleteAccount(testAcct)
   }
 
   private String cloudUri( String servicePath ) {
@@ -41,54 +51,54 @@ class TestELBApi {
 
   @Test
   public void testElbApi( ) throws Exception {
-    final AmazonElasticLoadBalancing elb = getELBClient( credentials )
+    final AmazonElasticLoadBalancing elb = getELBClient( testAcctAdminCredentials )
     final String elbInvalidName = 'invalid name for a load balancer'
     final List<Runnable> cleanupTasks = [] as List<Runnable>
     try {
       elb.with {
-        print( 'Describing load balancers' )
-        print( describeLoadBalancers( ).toString( ) )
+        N4j.print( 'Describing load balancers' )
+        N4j.print( describeLoadBalancers( ).toString( ) )
 
-        print( 'Describing load balancer tags' )
+        N4j.print( 'Describing load balancer tags' )
         try {
-          print( describeTags( new DescribeTagsRequest( loadBalancerNames: [ elbInvalidName ] ) ).toString( ) )
+          N4j.print( describeTags( new DescribeTagsRequest( loadBalancerNames: [ elbInvalidName ] ) ).toString( ) )
         } catch ( AmazonServiceException e ) {
-          print( "Got error for request with invalid name: ${e}" )
+          N4j.print( "Got error for request with invalid name: ${e}" )
         }
 
-        print( 'Describing load balancer attributes' )
+        N4j.print( 'Describing load balancer attributes' )
         try {
           describeLoadBalancerAttributes( new DescribeLoadBalancerAttributesRequest(
               loadBalancerName: elbInvalidName
           ) )
         } catch ( AmazonServiceException e ) {
-          print( "Got error for request with invalid name: ${e}" )
+          N4j.print( "Got error for request with invalid name: ${e}" )
         }
 
-        print( 'Deleting invalid load balancer' )
+        N4j.print( 'Deleting invalid load balancer' )
         deleteLoadBalancer( new DeleteLoadBalancerRequest(
             loadBalancerName: elbInvalidName
         ))
 
-        print( 'Describing policy types' )
+        N4j.print( 'Describing policy types' )
         describeLoadBalancerPolicyTypes( ).with {
-          print( it.toString( ) )
-          assertThat( policyTypeDescriptions != null, 'Expected policy type descriptions' )
-          assertThat( !policyTypeDescriptions.isEmpty( ), "Expected policy type descriptions but was empty" )
+          N4j.print( it.toString( ) )
+          N4j.assertThat( policyTypeDescriptions != null, 'Expected policy type descriptions' )
+          N4j.assertThat( !policyTypeDescriptions.isEmpty( ), "Expected policy type descriptions but was empty" )
           policyTypeDescriptions.each {
-            assertThat( it.policyTypeName != null, 'Expected policy type name' )
-            assertThat( it.description != null, 'Expected description' )
+            N4j.assertThat( it.policyTypeName != null, 'Expected policy type name' )
+            N4j.assertThat( it.description != null, 'Expected description' )
           }
         }
 
-        print( 'Describing load balancer policies' )
+        N4j.print( 'Describing load balancer policies' )
         describeLoadBalancerPolicies( new DescribeLoadBalancerPoliciesRequest( ) ).with {
-          print( it.toString( ) )
-          assertThat( policyDescriptions != null, 'Expected policy descriptions' )
-          assertThat( !policyDescriptions.isEmpty( ), "Expected policy descriptions but was empty" )
+          N4j.print( it.toString( ) )
+          N4j.assertThat( policyDescriptions != null, 'Expected policy descriptions' )
+          N4j.assertThat( !policyDescriptions.isEmpty( ), "Expected policy descriptions but was empty" )
           policyDescriptions.each {
-            assertThat( it.policyName != null, 'Expected policy name' )
-            assertThat( it.policyName.startsWith( 'ELBSample-' ) || it.policyName.startsWith( 'ELBSecurityPolicy-' ),
+            N4j.assertThat( it.policyName != null, 'Expected policy name' )
+            N4j.assertThat( it.policyName.startsWith( 'ELBSample-' ) || it.policyName.startsWith( 'ELBSecurityPolicy-' ),
                 "Expected sample policy name to start with 'ELBSample-' or 'ELBSecurityPolicy-', but was ${it.policyName}" )
           }
         }
