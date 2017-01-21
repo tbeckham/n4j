@@ -659,7 +659,7 @@ public class S3ObjectACLTests {
     assertTrue("Mimatch in md5sums between original object and PUT result. Expected " + md5_orig + ", but got " + putObj.getETag(),
         putObj.getETag() != null && putObj.getETag().equals(md5_orig));
 
-   // S3Utils.verifyObjectACL(s3, ownerName, bucketName, key, CannedAccessControlList.Private, ownerId, ownerId);
+    S3Utils.verifyObjectACL(s3, ownerName, bucketName, key, CannedAccessControlList.Private, ownerId, ownerId);
   }
 
   private void putObjectWithCannedACL(final String bucketName, final String key, CannedAccessControlList cannedACL) throws Exception {
