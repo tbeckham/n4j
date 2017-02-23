@@ -179,7 +179,7 @@ class TestIAMPolicyVariablesS3 {
                       "arn:aws:s3:::${bucketName}/home/\${aws:username}",
                       "arn:aws:s3:::${bucketName}/home/\${aws:username}/*",
                       "arn:aws:s3:::${bucketName}/home/\${aws:userid}",
-                      "arn:aws:s3:::${bucketName}/home/\${aws:userid}/*",
+                      "arn:aws:s3:::${bucketName}/home/\${aws:userid}/*"
                     ]
                   }
                 ]
@@ -270,7 +270,7 @@ class TestIAMPolicyVariablesS3 {
                     "Action": "s3:*",
                     "Resource": [
                       "arn:aws:s3:::${bucketName}/home/\${aws:userid}",
-                      "arn:aws:s3:::${bucketName}/home/\${aws:userid}/*",
+                      "arn:aws:s3:::${bucketName}/home/\${aws:userid}/*"
                     ]
                   }
                 ]
