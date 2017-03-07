@@ -16,18 +16,18 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient
 import com.github.sjones4.youcan.youare.YouAre
 import com.github.sjones4.youcan.youare.YouAreClient
+import org.testng.annotations.AfterClass
+import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
-import static com.eucalyptus.tests.awssdk.N4j.minimalInit
-import static com.eucalyptus.tests.awssdk.N4j.CLC_IP
-import static com.eucalyptus.tests.awssdk.N4j.ACCESS_KEY
-import static com.eucalyptus.tests.awssdk.N4j.SECRET_KEY
+
+import static com.eucalyptus.tests.awssdk.N4j.EC2_ENDPOINT
+import static com.eucalyptus.tests.awssdk.N4j.IAM_ENDPOINT
+import static com.eucalyptus.tests.awssdk.N4j.TOKENS_ENDPOINT
 
 import java.text.SimpleDateFormat
 
 /**
  * Tests functionality for aws:TokenIssueTime and aws:SecureTransport condition keys.
- *
- * This test must be run as a regular user (i.e. non-system) with full permissions.
  *
  * Related issues:
  *   https://eucalyptus.atlassian.net/browse/EUCA-12758
@@ -39,36 +39,38 @@ import java.text.SimpleDateFormat
  */
 class TestSTSConditionKeys {
 
-  public TestSTSConditionKeys( ) {
-    minimalInit()
-    this.host = CLC_IP
-    this.credentials = new StaticCredentialsProvider( new BasicAWSCredentials( ACCESS_KEY, SECRET_KEY ) )
+  private String account
+  private AWSCredentialsProvider credentials
+
+  @BeforeClass
+  public void init() throws Exception {
+    N4j.getCloudInfo()
+    this.account = this.getClass().simpleName.toLowerCase()
+    N4j.createAccount(account)
+    this.credentials = new StaticCredentialsProvider( N4j.getUserCreds(account,'admin') )
   }
 
-  private final String host
-  private final AWSCredentialsProvider credentials
-
-  private String cloudUri( String host, String servicePath ) {
-    URI.create( "http://${host}:8773/" )
-        .resolve( servicePath )
-        .toString( )
+  @AfterClass
+  public void teardown() throws Exception {
+    N4j.print("### POST SUITE CLEANUP - ${getClass().simpleName}")
+    N4j.deleteAccount(account)
   }
 
   private AmazonIdentityManagement getIamClient( AWSCredentialsProvider credentialsProvider = credentials ) {
     final YouAre youAre = new YouAreClient( credentialsProvider );
-    youAre.setEndpoint( cloudUri( host, '/services/Euare' ) );
+    youAre.setEndpoint( IAM_ENDPOINT );
     youAre
   }
 
   private AWSSecurityTokenService getStsClient( AWSCredentialsProvider credentialsProvider = credentials ) {
     final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient( credentialsProvider )
-    sts.setEndpoint( cloudUri( host, '/services/Tokens') )
+    sts.setEndpoint( TOKENS_ENDPOINT )
     sts
   }
 
   private AmazonEC2 getEc2Client( AWSCredentialsProvider credentialsProvider = credentials ) {
     final AmazonEC2 ec2 = new AmazonEC2Client( credentialsProvider )
-    ec2.setEndpoint( cloudUri( host, '/services/compute') )
+    ec2.setEndpoint( EC2_ENDPOINT )
     ec2
   }
 
