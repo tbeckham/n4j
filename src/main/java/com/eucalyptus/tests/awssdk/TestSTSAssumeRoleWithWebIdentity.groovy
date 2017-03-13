@@ -66,6 +66,7 @@ import java.security.spec.RSAPrivateKeySpec
  *   https://eucalyptus.atlassian.net/browse/EUCA-12564
  *   https://eucalyptus.atlassian.net/browse/EUCA-12566
  *   https://eucalyptus.atlassian.net/browse/EUCA-12717
+ *   https://eucalyptus.atlassian.net/browse/EUCA-13007
  *
  * Related AWS doc:
  *   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
@@ -541,7 +542,6 @@ class TestSTSAssumeRoleWithWebIdentity {
         [
                 [durationSeconds: 899],
                 [durationSeconds: 3601],
-                [roleArn: 'arn:aws:iam:::role/r'],
                 [roleSessionName: 'a'],
                 [roleSessionName: 'a' * 65],
                 [webIdentityToken: '1'],
@@ -590,7 +590,18 @@ class TestSTSAssumeRoleWithWebIdentity {
           N4j.assertThat( e.statusCode == 403, "Expected status code 403, but was: ${e.statusCode}")
           N4j.assertThat( e.errorCode == 'AccessDenied', "Expected error code AccessDenied, but was: ${e.errorCode}")
         }
-
+        try {
+          Map<String, Object> parameters = [:]
+          parameters << validParameters
+          parameters << [roleArn: "${roleArn}Invalid"]
+          N4j.print "Testing assume role with web identity using invalid role arn, parameters: ${parameters}"
+          assumeRoleWithWebIdentity( new AssumeRoleWithWebIdentityRequest( parameters ) )
+          N4j.assertThat( false, 'Expected assume role with web identity failure due to invalid role arn' )
+        } catch (AmazonServiceException e) {
+          N4j.print e.toString( )
+          N4j.assertThat( e.statusCode == 403, "Expected status code 403, but was: ${e.statusCode}")
+          N4j.assertThat( e.errorCode == 'AccessDenied', "Expected error code AccessDenied, but was: ${e.errorCode}")
+        }
         try {
           Map<String, Object> parameters = [:]
           parameters << validParameters
