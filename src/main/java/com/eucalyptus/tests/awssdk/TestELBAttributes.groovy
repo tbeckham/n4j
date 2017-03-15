@@ -1,5 +1,6 @@
 package com.eucalyptus.tests.awssdk
 
+import com.amazonaws.AmazonServiceException
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.internal.StaticCredentialsProvider
@@ -10,8 +11,10 @@ import com.amazonaws.services.ec2.AmazonEC2Client
 import com.amazonaws.services.ec2.model.*
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient
+import com.amazonaws.services.elasticloadbalancing.model.AccessLog
 import com.amazonaws.services.elasticloadbalancing.model.ConnectionSettings
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest
+import com.amazonaws.services.elasticloadbalancing.model.CrossZoneLoadBalancing
 import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerRequest
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancerAttributesRequest
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult
@@ -77,7 +80,7 @@ class TestELBAttributes {
   }
 
   private void print( String text ) {
-    System.out.println( text )
+    N4j.print( text )
   }
 
   @Test
@@ -116,15 +119,15 @@ class TestELBAttributes {
           deleteLoadBalancer( new DeleteLoadBalancerRequest( loadBalancerName: loadBalancerName ) )
         }
 
-        println( "Created load balancer: ${loadBalancerName}" )
+        print( "Created load balancer: ${loadBalancerName}" )
         final DescribeLoadBalancersResult loadBalancersResult = describeLoadBalancers( )
-        println( loadBalancersResult.toString( ) )
+        print( loadBalancersResult.toString( ) )
 
-        println( "Describing load balancer attributes" )
+        print( "Describing load balancer attributes" )
         describeLoadBalancerAttributes( new DescribeLoadBalancerAttributesRequest(
           loadBalancerName: loadBalancerName
         ) ).with {
-          println( loadBalancerAttributes.toString( ) )
+          print( loadBalancerAttributes.toString( ) )
           loadBalancerAttributes.with {
             connectionSettings.with {
               assertThat( 60 == idleTimeout, "Expected default idle timeout 60, but was: ${idleTimeout}" )
@@ -132,7 +135,7 @@ class TestELBAttributes {
           }
         }
 
-        println( "Modifying load balancer attributes" )
+        print( "Modifying load balancer attributes" )
         modifyLoadBalancerAttributes( new ModifyLoadBalancerAttributesRequest(
           loadBalancerName: loadBalancerName,
           loadBalancerAttributes: new LoadBalancerAttributes(
@@ -148,15 +151,58 @@ class TestELBAttributes {
           }
         }
 
-        println( "Describing load balancer attributes" )
+        print( "Describing load balancer attributes" )
         describeLoadBalancerAttributes( new DescribeLoadBalancerAttributesRequest(
             loadBalancerName: loadBalancerName
         ) ).with {
-          println( loadBalancerAttributes.toString( ) )
+          print( loadBalancerAttributes.toString( ) )
           loadBalancerAttributes.with {
             connectionSettings.with {
               assertThat( 1000 == idleTimeout, "Expected idle timeout 1000, but was: ${idleTimeout}" )
             }
+          }
+        }
+
+        List<LoadBalancerAttributes> attributesList = [
+            new LoadBalancerAttributes(
+                connectionSettings: new ConnectionSettings(
+                    idleTimeout: 1000
+                )
+            ),
+            new LoadBalancerAttributes(
+                accessLog: new AccessLog(
+                    enabled: false
+                )
+            ),
+            new LoadBalancerAttributes(
+                crossZoneLoadBalancing: new CrossZoneLoadBalancing(
+                    enabled: false
+                )
+            ),
+        ]
+
+        print( 'Testing setting supported attributes for load balancers' )
+        attributesList.each { LoadBalancerAttributes attributes ->
+          print( "Testing attributes ${attributes}" )
+          modifyLoadBalancerAttributes( new ModifyLoadBalancerAttributesRequest(
+              loadBalancerName: loadBalancerName,
+              loadBalancerAttributes: attributes
+          ))
+        }
+
+        print( 'Testing setting supported attributes on an invalid load balancer' )
+        attributesList.each { LoadBalancerAttributes attributes ->
+          print( "Testing attributes ${attributes}" )
+          try {
+            modifyLoadBalancerAttributes( new ModifyLoadBalancerAttributesRequest(
+                loadBalancerName: 'load balancer that does not exist',
+                loadBalancerAttributes: attributes
+            ))
+            N4j.assertThat( false, 'Expected failure setting attributes for invalid load balancer' )
+          } catch ( AmazonServiceException e ) {
+            print( "Got (expected) error when modifying attribute for invalid load balancer: ${e}" )
+            N4j.assertThat( [ 'AccessPointNotFound', 'LoadBalancerNotFound' ].contains( e.errorCode ),
+                "Unexpected error code: ${e.errorCode}" )
           }
         }
       }
