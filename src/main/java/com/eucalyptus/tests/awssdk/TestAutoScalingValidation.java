@@ -1,22 +1,3 @@
-/*************************************************************************
- * Copyright 2009-2016 Eucalyptus Systems, Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 3 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses/.
- *
- * Please contact Eucalyptus Systems, Inc., 6755 Hollister Ave., Goleta
- * CA 93117, USA or visit http://www.eucalyptus.com/licenses/ if you need
- * additional information or have any questions.
- ************************************************************************/
 package com.eucalyptus.tests.awssdk;
 
 import com.amazonaws.AmazonServiceException;
@@ -33,9 +14,10 @@ import static com.eucalyptus.tests.awssdk.N4j.*;
 /**
  * This application tests parameter validation for auto scaling.
  * <p/>
- * This is verification for the story:
+ * This is verification for:
  * <p/>
  * https://eucalyptus.atlassian.net/browse/EUCA-5016
+ * https://eucalyptus.atlassian.net/browse/EUCA-13035
  */
 public class TestAutoScalingValidation {
 
@@ -66,6 +48,8 @@ public class TestAutoScalingValidation {
                 assertThat(false, "Expected error when creating launch configuration with invalid name");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create launch configuration with missing required parameter
@@ -77,6 +61,8 @@ public class TestAutoScalingValidation {
                 assertThat(false, "Expected error when creating launch configuration with missing parameter");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create launch configuration
@@ -106,9 +92,11 @@ public class TestAutoScalingValidation {
                         .withMaxSize(1)
                         .withAvailabilityZones(AVAILABILITY_ZONE)
                 );
-                assertThat(false, "Expected error when creating launch group with invalid size");
+                assertThat(false, "Expected error when creating scaling group with invalid size");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create scaling group with invalid capacity
@@ -122,9 +110,11 @@ public class TestAutoScalingValidation {
                         .withDesiredCapacity(2)
                         .withAvailabilityZones(AVAILABILITY_ZONE)
                 );
-                assertThat(false, "Expected error when creating launch group with invalid capacity");
+                assertThat(false, "Expected error when creating scaling group with invalid capacity");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create scaling group with invalid tag
@@ -143,9 +133,23 @@ public class TestAutoScalingValidation {
                                 new Tag().withKey("tag1" + nameSuffix).withValue("propagate").withPropagateAtLaunch(Boolean.TRUE)
                         )
                 );
-                assertThat(false, "Expected error when creating launch group with invalid tag");
+                assertThat(false, "Expected error when creating scaling group with invalid tag");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Create scaling group with missing required parameter
+            print("Creating auto scaling group with missing required parameters");
+            try {
+                as.createAutoScalingGroup( new CreateAutoScalingGroupRequest( )
+                    .withAvailabilityZones( AVAILABILITY_ZONE ) );
+                assertThat(false, "Expected error when creating scaling group with missing required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create scaling group
@@ -166,6 +170,8 @@ public class TestAutoScalingValidation {
                 assertThat(false, "Expected error when creating tag on invalid group");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Register cleanup for launch configs
@@ -190,6 +196,8 @@ public class TestAutoScalingValidation {
                 assertThat(false, "Expected error when creating invalid scaling policy");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             // Create invalid scaling policy
@@ -203,6 +211,102 @@ public class TestAutoScalingValidation {
                 assertThat(false, "Expected error when creating invalid scaling policy");
             } catch (AmazonServiceException e) {
                 print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Update group / set desired capacity with missing parameters
+            try {
+                as.updateAutoScalingGroup( new UpdateAutoScalingGroupRequest( ) );
+                assertThat(false, "Expected error when updating scaling group without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+            try {
+                as.setDesiredCapacity( new SetDesiredCapacityRequest( ) );
+                assertThat(false, "Expected error when setting desired capacity for scaling group without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Enable/disable metrics collection with missing parameters
+            try {
+                as.enableMetricsCollection( new EnableMetricsCollectionRequest( )
+                    .withMetrics( "GroupMinSize" )
+                    .withGranularity( "1Minute" )
+                );
+                assertThat(false, "Expected error when enabling metrics collection without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+            try {
+                as.disableMetricsCollection( new DisableMetricsCollectionRequest( )
+                    .withMetrics( "GroupMinSize" ) );
+                assertThat(false, "Expected error when disabling metrics collection without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Suspend/resume scaling processes with missing parameters
+            try {
+                as.suspendProcesses( new SuspendProcessesRequest( ) );
+                assertThat(false, "Expected error when suspending processes without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+            try {
+                as.resumeProcesses( new ResumeProcessesRequest( ) );
+                assertThat(false, "Expected error when resuming processes without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Put / execute scaling policies with missing parameters
+            try {
+                as.putScalingPolicy( new PutScalingPolicyRequest( ) );
+                assertThat(false, "Expected error when putting scaling policy without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+            try {
+                as.executePolicy( new ExecutePolicyRequest( ) );
+                assertThat(false, "Expected error when executing scaling policy without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+
+            // Set instance health/terminate instance with missing parameters
+            try {
+                as.setInstanceHealth( new SetInstanceHealthRequest( ) );
+                assertThat(false, "Expected error when setting instance health without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
+            }
+            try {
+                as.terminateInstanceInAutoScalingGroup( new TerminateInstanceInAutoScalingGroupRequest( ) );
+                assertThat(false, "Expected error when terminating scaling instance without required parameters");
+            } catch (AmazonServiceException e) {
+                print("Got expected exception: " + e);
+                assertThat( e.getErrorCode( ) != null, "Expected error code" );
+                assertThat( e.getErrorMessage( ) != null, "Expected error message" );
             }
 
             print("Test complete");
