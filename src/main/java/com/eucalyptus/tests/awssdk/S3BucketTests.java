@@ -5,6 +5,7 @@ import static com.eucalyptus.tests.awssdk.N4j.eucaUUID;
 import static com.eucalyptus.tests.awssdk.N4j.initS3ClientWithNewAccount;
 import static com.eucalyptus.tests.awssdk.N4j.print;
 import static com.eucalyptus.tests.awssdk.N4j.testInfo;
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.util.ArrayList;
@@ -19,7 +20,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.Request;
+import com.amazonaws.Response;
+import com.amazonaws.handlers.RequestHandler2;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
@@ -339,7 +344,16 @@ public class S3BucketTests {
     List<TagSet> tagSetList = new ArrayList<TagSet>();
     tagSetList.add(tagSet1);
     bucketTaggingConfiguration.setTagSets(tagSetList);
+    final RequestHandler2 statusCodeCheckingHandler = new RequestHandler2( ) {
+      @Override
+      public void afterResponse( final Request<?> request, final Response<?> response ) {
+        print(account + ": Got response status code " + response.getHttpResponse( ).getStatusCode( ));
+        assertEquals( "Status code", 204, response.getHttpResponse( ).getStatusCode( ) );
+      }
+    };
+    ((AmazonS3Client)s3).addRequestHandler( statusCodeCheckingHandler );
     s3.setBucketTaggingConfiguration(bucketName, bucketTaggingConfiguration);
+    ((AmazonS3Client)s3).removeRequestHandler( statusCodeCheckingHandler );
 
     print(account + ": Getting TagSets for bucket '" + bucketName + "'");
     List<TagSet> tagSets = bucketTaggingConfiguration.getAllTagSets();

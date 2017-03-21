@@ -60,6 +60,7 @@ import static com.eucalyptus.tests.awssdk.N4j.*;
  * <ul>
  * <li>https://eucalyptus.atlassian.net/browse/EUCA-5250</li>
  * <li>https://eucalyptus.atlassian.net/browse/EUCA-12318</li>
+ * <li>https://eucalyptus.atlassian.net/browse/EUCA-13007</li>
  * </ul>
  */
 public class TestSTSAssumeRole {
@@ -171,6 +172,39 @@ public class TestSTSAssumeRole {
             print("Got role arn : " + roleArn);
             print("Got role id  : " + roleId);
 
+            { // check errors for role not found
+                final AWSSecurityTokenService sts = new AWSSecurityTokenServiceClient( awsCredentialsProvider );
+                sts.setEndpoint( TOKENS_ENDPOINT );
+
+                print("Ensuring access denied error for role that does not exist in same account");
+                try {
+                    sts.assumeRole( new AssumeRoleRequest()
+                        .withRoleArn( roleArn + "Invalid" )
+                        .withRoleSessionName("test-sts-assume-role")
+                    );
+                    assertThat(false, "Expected error due to invalid role arn (same account)");
+                } catch (AmazonServiceException e) {
+                    print("Received expected exception: " + e);
+                    assertThat( "AccessDenied".equals( e.getErrorCode( ) ), "Expected AccessDenied error code" );
+                    assertThat( "Not authorized to perform sts:AssumeRole".equals( e.getErrorMessage( ) ),
+                        "Expected 'Not authorized to perform sts:AssumeRole' error message" );
+                }
+
+                print("Ensuring access denied error for role that does not exist in other account");
+                try {
+                    sts.assumeRole( new AssumeRoleRequest()
+                        .withRoleArn( roleArn.replace( accountId, "012345678901" ) )
+                        .withRoleSessionName("test-sts-assume-role")
+                    );
+                    assertThat(false, "Expected error due to invalid role arn (other account)");
+                } catch (AmazonServiceException e) {
+                    print("Received expected exception: " + e);
+                    assertThat( "AccessDenied".equals( e.getErrorCode( ) ), "Expected AccessDenied error code" );
+                    assertThat( "Not authorized to perform sts:AssumeRole".equals( e.getErrorMessage( ) ),
+                        "Expected 'Not authorized to perform sts:AssumeRole' error message" );
+                }
+            }
+
             /* Describe images using role with no permissions
              * In 3.X this would just return nothing
              * In 4.0 should get error. see EUCA-8513
@@ -235,6 +269,9 @@ public class TestSTSAssumeRole {
                 assertThat(false, "Expected error due to incorrect external id when assuming role (test must not be run as cloud admin)");
             } catch (AmazonServiceException e) {
                 print("Received expected exception: " + e);
+                assertThat( "AccessDenied".equals( e.getErrorCode( ) ), "Expected AccessDenied error code" );
+                assertThat( "Not authorized to perform sts:AssumeRole".equals( e.getErrorMessage( ) ),
+                    "Expected 'Not authorized to perform sts:AssumeRole' error message" );
             }
 
             // Get caller identity using user credentials
